@@ -1,12 +1,10 @@
 import { Box, Button, Container, Grid, Typography, Card, CardContent, Fade, Zoom } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import PersonIcon from '@mui/icons-material/Person';
-import FactoryIcon from '@mui/icons-material/Factory';
 import BuildIcon from '@mui/icons-material/Build';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import SettingsIcon from '@mui/icons-material/Settings';
 
-const Home = () => {
+const EmployeeHome = () => {
   const navigate = useNavigate();
 
   const navigationButtons = [
@@ -17,28 +15,16 @@ const Home = () => {
       description: 'Acesse sua área pessoal e gerencie suas atividades'
     },
     { 
-      text: 'Produção', 
-      path: '/admin',
-      icon: <FactoryIcon sx={{ fontSize: 40 }} />,
-      description: 'Gerencie ordens de produção e acompanhe o status'
-    },
-    { 
       text: 'Manutenção', 
       path: '/maintenance',
       icon: <BuildIcon sx={{ fontSize: 40 }} />,
-      description: 'Controle manutenções e equipamentos'
-    },
-    { 
-      text: 'Financeiro', 
-      path: '/financial',
-      icon: <AttachMoneyIcon sx={{ fontSize: 40 }} />,
-      description: 'Acompanhe métricas e indicadores financeiros'
+      description: 'Abra chamados de manutenção e acompanhe o status'
     },
     { 
       text: 'Configurações', 
       path: '/settings',
       icon: <SettingsIcon sx={{ fontSize: 40 }} />,
-      description: 'Configure parâmetros do sistema'
+      description: 'Altere o tema e faça backup dos seus dados'
     },
   ];
 
@@ -72,8 +58,21 @@ const Home = () => {
               }
             }}
           >
-            Sistema MRP2
+            Portal do Funcionário
           </Typography>
+
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              mb: 4, 
+              color: 'text.secondary',
+              maxWidth: '800px',
+              margin: '0 auto 40px'
+            }}
+          >
+            Bem-vindo ao seu portal. Acesse suas atividades e gerencie suas configurações.
+          </Typography>
+
           <Grid container spacing={3} justifyContent="center">
             {navigationButtons.map((button, index) => (
               <Grid item xs={12} sm={6} md={4} key={button.path}>
@@ -147,4 +146,4 @@ const Home = () => {
   );
 };
 
-export default Home; 
+export default EmployeeHome; 

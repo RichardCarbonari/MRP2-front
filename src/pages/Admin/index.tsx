@@ -25,6 +25,10 @@ import {
     InputLabel,
     Select,
     Grid,
+    Fade,
+    Zoom,
+    useTheme,
+    Chip,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -32,6 +36,7 @@ import { ptBR } from 'date-fns/locale';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import TimerComponent from '../../components/TimerComponent';
 import { useTimer } from '../../contexts/TimerContext';
 import TeamStatusTable from '../../components/TeamStatusTable';
@@ -75,6 +80,8 @@ interface NewProductionOrder {
 }
 
 export default function Admin() {
+    const theme = useTheme();
+    const [isLoading, setIsLoading] = useState(false);
     const { estimatedTime, setEstimatedTime } = useTimer();
     const [adminInfo] = useState<Admin>({
         id: 1,
@@ -205,253 +212,392 @@ export default function Admin() {
         }
     };
 
+    const handleRefresh = () => {
+        setIsLoading(true);
+        // Simular carregamento
+        setTimeout(() => setIsLoading(false), 1000);
+    };
+
     return (
-        <Box sx={{
-            minHeight: '100vh',
-            backgroundColor: '#ffffff',
-            pt: 3,
-            pb: 3,
-            width: '100vw',
-            overflowX: 'hidden'
-        }}>
-            <Container 
-                maxWidth="xl" 
-                sx={{ 
-                    mx: 'auto',
-                    px: 2
-                }}
-            >
-                {/* Header */}
-                <Paper 
-                    elevation={0}
-                    sx={{ 
-                        p: 2, 
-                        mb: 3, 
-                        backgroundColor: '#1DB954',
-                        color: 'white',
-                        borderRadius: 2,
-                        textAlign: 'center'
-                    }}
-                >
-                    <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
-                        Gestão de Produção
-                    </Typography>
-                </Paper>
-
-                {/* Informações do Administrador */}
-                <Paper 
-                    elevation={0}
-                    sx={{ 
-                        p: 2, 
-                        mb: 3, 
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: 2,
-                        textAlign: 'center'
-                    }}
-                >
-                    <Typography variant="h6" sx={{ color: '#282828', fontWeight: 'bold' }}>
-                        {adminInfo.name}
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: '#666', mt: 1 }}>
-                        {adminInfo.role} | Setor: {adminInfo.department} | Turno: {adminInfo.shift}
-                    </Typography>
-                </Paper>
-
-                {/* Métricas */}
-                <Box sx={{ mb: 3 }}>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
-                        <Card sx={{ backgroundColor: '#f8f9fa' }}>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Total de Equipes
-                                </Typography>
-                                <Typography variant="h4" sx={{ color: '#1DB954' }}>
-                                    {teams.length}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                        <Card sx={{ backgroundColor: '#f8f9fa' }}>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Equipes Ativas
-                                </Typography>
-                                <Typography variant="h4" sx={{ color: '#1DB954' }}>
-                                    3
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                        <Card sx={{ backgroundColor: '#f8f9fa' }}>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Taxa de Conclusão
-                                </Typography>
-                                <Typography variant="h4" sx={{ color: '#1DB954' }}>
-                                    85%
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                        <Card sx={{ backgroundColor: '#f8f9fa' }}>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Eficiência Geral
-                                </Typography>
-                                <Typography variant="h4" sx={{ color: '#1DB954' }}>
-                                    92%
-                                </Typography>
-                            </CardContent>
-                        </Card>
+        <Fade in={true} timeout={800}>
+            <Container maxWidth="xl">
+                <Box sx={{ py: 4 }}>
+                    {/* Header */}
+                    <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        mb: 4,
+                        flexWrap: 'wrap',
+                        gap: 2
+                    }}>
+                        <Typography 
+                            variant="h4" 
+                            sx={{ 
+                                color: '#1DB954', 
+                                fontWeight: 'bold',
+                                position: 'relative',
+                                '&::after': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    bottom: -8,
+                                    left: 0,
+                                    width: '60%',
+                                    height: 4,
+                                    backgroundColor: '#1DB954',
+                                    borderRadius: 2
+                                }
+                            }}
+                        >
+                            Painel de Administração
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Button
+                                variant="outlined"
+                                startIcon={<RefreshIcon className={isLoading ? 'rotating' : ''} />}
+                                onClick={handleRefresh}
+                                sx={{ 
+                                    borderColor: '#1DB954',
+                                    color: '#1DB954',
+                                    '&:hover': {
+                                        borderColor: '#18a34b',
+                                        backgroundColor: 'rgba(29, 185, 84, 0.1)'
+                                    }
+                                }}
+                            >
+                                Atualizar
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={handleOpenNewOrderModal}
+                                sx={{ 
+                                    bgcolor: '#1DB954',
+                                    '&:hover': {
+                                        bgcolor: '#18a34b'
+                                    },
+                                    boxShadow: '0 4px 6px rgba(29, 185, 84, 0.2)'
+                                }}
+                            >
+                                Nova Ordem de Produção
+                            </Button>
+                        </Box>
                     </Box>
-                </Box>
 
-                {/* Tabela de Ordens de Produção */}
-                <Card sx={{ mb: 3 }}>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom sx={{ color: '#1DB954', fontWeight: 'bold' }}>
+                    {/* Admin Info and Timer */}
+                    <Grid container spacing={3} sx={{ mb: 4 }}>
+                        <Grid item xs={12} md={6}>
+                            <Zoom in={true} style={{ transitionDelay: '100ms' }}>
+                                <Card sx={{
+                                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                                    '&:hover': {
+                                        transform: 'translateY(-5px)',
+                                        boxShadow: '0 12px 20px rgba(0,0,0,0.15)'
+                                    }
+                                }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom sx={{ color: '#1DB954', fontWeight: 'bold' }}>
+                                            Informações do Administrador
+                                        </Typography>
+                                        <Box sx={{ mt: 2 }}>
+                                            <Typography variant="body1" sx={{ mb: 1 }}>
+                                                <strong>Nome:</strong> {adminInfo.name}
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ mb: 1 }}>
+                                                <strong>Cargo:</strong> {adminInfo.role}
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ mb: 1 }}>
+                                                <strong>Departamento:</strong> {adminInfo.department}
+                                            </Typography>
+                                            <Typography variant="body1">
+                                                <strong>Turno:</strong> {adminInfo.shift}
+                                            </Typography>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            </Zoom>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Zoom in={true} style={{ transitionDelay: '200ms' }}>
+                                <Card sx={{
+                                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                                    '&:hover': {
+                                        transform: 'translateY(-5px)',
+                                        boxShadow: '0 12px 20px rgba(0,0,0,0.15)'
+                                    }
+                                }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom sx={{ color: '#1DB954', fontWeight: 'bold' }}>
+                                            Controle de Tempo
+                                        </Typography>
+                                        <Box sx={{ mt: 2 }}>
+                                            <TimerComponent />
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            </Zoom>
+                        </Grid>
+                    </Grid>
+
+                    {/* Production Orders Table */}
+                    <Paper sx={{ 
+                        p: 3, 
+                        mb: 4,
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                    }}>
+                        <Typography variant="h6" sx={{ 
+                            mb: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            '&::before': {
+                                content: '""',
+                                width: 4,
+                                height: 24,
+                                backgroundColor: '#1DB954',
+                                borderRadius: 2
+                            }
+                        }}>
                             Ordens de Produção
                         </Typography>
                         <TableContainer>
                             <Table>
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell>ID</TableCell>
-                                        <TableCell>Produto</TableCell>
-                                        <TableCell>Quantidade</TableCell>
-                                        <TableCell>Prazo</TableCell>
-                                        <TableCell>Status</TableCell>
-                                        <TableCell>Responsável</TableCell>
-                                        <TableCell>Ações</TableCell>
+                                        <TableCell sx={{ fontWeight: 'bold' }}>Produto</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>Quantidade</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>Prazo</TableCell>
+                                        <TableCell align="center" sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                                        <TableCell sx={{ fontWeight: 'bold' }}>Responsável</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>Ações</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {productionOrders.map((order) => (
-                                        <TableRow key={order.id}>
-                                            <TableCell>{order.id}</TableCell>
+                                        <TableRow 
+                                            key={order.id}
+                                            hover
+                                            sx={{
+                                                transition: 'background-color 0.2s',
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(29, 185, 84, 0.05)'
+                                                }
+                                            }}
+                                        >
                                             <TableCell>{order.product}</TableCell>
-                                            <TableCell>{order.quantity}</TableCell>
-                                            <TableCell>{order.deadline}</TableCell>
-                                            <TableCell>{order.status}</TableCell>
+                                            <TableCell align="right">{order.quantity}</TableCell>
+                                            <TableCell align="right">{order.deadline}</TableCell>
+                                            <TableCell align="center">
+                                                <Chip
+                                                    label={order.status}
+                                                    color={order.status === 'Em Produção' ? 'primary' : 'warning'}
+                                                    sx={{
+                                                        bgcolor: order.status === 'Em Produção' ? '#1DB954' : undefined,
+                                                        fontWeight: 'bold',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                    }}
+                                                />
+                                            </TableCell>
                                             <TableCell>{order.assignedTo}</TableCell>
-                                            <TableCell>
-                                                <IconButton 
-                                                    size="small" 
-                                                    color="primary"
-                                                    onClick={() => handleOpenEditModal(order)}
-                                                >
-                                                    <EditIcon />
-                                                </IconButton>
-                                                <IconButton 
-                                                    size="small" 
-                                                    color="error"
-                                                    onClick={() => handleDeleteOrder(order.id)}
-                                                >
-                                                    <DeleteIcon />
-                                                </IconButton>
+                                            <TableCell align="right">
+                                                <Tooltip title="Editar" arrow>
+                                                    <IconButton 
+                                                        onClick={() => handleOpenEditModal(order)}
+                                                        sx={{ color: '#1DB954' }}
+                                                    >
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Excluir" arrow>
+                                                    <IconButton 
+                                                        onClick={() => handleDeleteOrder(order.id)}
+                                                        color="error"
+                                                    >
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </Tooltip>
                                             </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
                         </TableContainer>
-                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                    </Paper>
+
+                    {/* Team Status */}
+                    <Paper sx={{ 
+                        p: 3,
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                    }}>
+                        <Typography variant="h6" sx={{ 
+                            mb: 3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            '&::before': {
+                                content: '""',
+                                width: 4,
+                                height: 24,
+                                backgroundColor: '#1DB954',
+                                borderRadius: 2
+                            }
+                        }}>
+                            Status das Equipes
+                        </Typography>
+                        <TeamStatusTable />
+                    </Paper>
+
+                    {/* Modals */}
+                    <Dialog 
+                        open={isEditModalOpen} 
+                        onClose={handleCloseEditModal}
+                        maxWidth="sm"
+                        fullWidth
+                    >
+                        <DialogTitle sx={{ 
+                            backgroundColor: '#1DB954', 
+                            color: 'white',
+                            fontWeight: 'bold'
+                        }}>
+                            Editar Ordem de Produção
+                        </DialogTitle>
+                        <DialogContent sx={{ pt: 2 }}>
+                            {editingOrder && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                                    <TextField
+                                        label="Produto"
+                                        value={editingOrder.product}
+                                        onChange={(e) => setEditingOrder({
+                                            ...editingOrder,
+                                            product: e.target.value
+                                        })}
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Quantidade"
+                                        type="number"
+                                        value={editingOrder.quantity}
+                                        onChange={(e) => setEditingOrder({
+                                            ...editingOrder,
+                                            quantity: Number(e.target.value)
+                                        })}
+                                        fullWidth
+                                    />
+                                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+                                        <DatePicker
+                                            label="Prazo"
+                                            value={new Date(editingOrder.deadline)}
+                                            onChange={(date) => setEditingOrder({
+                                                ...editingOrder,
+                                                deadline: date ? date.toISOString().split('T')[0] : editingOrder.deadline
+                                            })}
+                                        />
+                                    </LocalizationProvider>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Status</InputLabel>
+                                        <Select
+                                            value={editingOrder.status}
+                                            label="Status"
+                                            onChange={(e) => setEditingOrder({
+                                                ...editingOrder,
+                                                status: e.target.value
+                                            })}
+                                        >
+                                            <MenuItem value="Aguardando">Aguardando</MenuItem>
+                                            <MenuItem value="Em Produção">Em Produção</MenuItem>
+                                            <MenuItem value="Concluído">Concluído</MenuItem>
+                                            <MenuItem value="Cancelado">Cancelado</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Responsável</InputLabel>
+                                        <Select
+                                            value={editingOrder.assignedTo}
+                                            label="Responsável"
+                                            onChange={(e) => setEditingOrder({
+                                                ...editingOrder,
+                                                assignedTo: e.target.value
+                                            })}
+                                        >
+                                            {employees.map(employee => (
+                                                <MenuItem key={employee.id} value={employee.name}>
+                                                    {employee.name}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            )}
+                        </DialogContent>
+                        <DialogActions sx={{ p: 2 }}>
+                            <Button 
+                                onClick={handleCloseEditModal}
+                                sx={{ color: '#666' }}
+                            >
+                                Cancelar
+                            </Button>
                             <Button
                                 variant="contained"
-                                startIcon={<AddIcon />}
-                                onClick={handleOpenNewOrderModal}
+                                onClick={handleEditOrder}
                                 sx={{
                                     backgroundColor: '#1DB954',
                                     '&:hover': {
                                         backgroundColor: '#18a449'
-                                    },
-                                    px: 4
+                                    }
                                 }}
                             >
-                                Nova Ordem de Produção
+                                Salvar
                             </Button>
-                        </Box>
-                    </CardContent>
-                </Card>
+                        </DialogActions>
+                    </Dialog>
 
-                {/* Status das Equipes */}
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom sx={{ color: '#1DB954', fontWeight: 'bold' }}>
-                            Status das Equipes
-                        </Typography>
-                        <TeamStatusTable />
-                    </CardContent>
-                </Card>
-
-                {/* Modal de Edição */}
-                <Dialog 
-                    open={isEditModalOpen} 
-                    onClose={handleCloseEditModal}
-                    maxWidth="sm"
-                    fullWidth
-                >
-                    <DialogTitle sx={{ 
-                        backgroundColor: '#1DB954', 
-                        color: 'white',
-                        fontWeight: 'bold'
-                    }}>
-                        Editar Ordem de Produção
-                    </DialogTitle>
-                    <DialogContent sx={{ pt: 2 }}>
-                        {editingOrder && (
+                    <Dialog 
+                        open={isNewOrderModalOpen} 
+                        onClose={handleCloseNewOrderModal}
+                        maxWidth="sm"
+                        fullWidth
+                    >
+                        <DialogTitle sx={{ 
+                            backgroundColor: '#1DB954', 
+                            color: 'white',
+                            fontWeight: 'bold'
+                        }}>
+                            Nova Ordem de Produção
+                        </DialogTitle>
+                        <DialogContent sx={{ pt: 2 }}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                                 <TextField
                                     label="Produto"
-                                    value={editingOrder.product}
-                                    onChange={(e) => setEditingOrder({
-                                        ...editingOrder,
-                                        product: e.target.value
-                                    })}
+                                    value={newOrder.product}
+                                    onChange={(e) => handleNewOrderChange('product', e.target.value)}
                                     fullWidth
                                 />
                                 <TextField
                                     label="Quantidade"
                                     type="number"
-                                    value={editingOrder.quantity}
-                                    onChange={(e) => setEditingOrder({
-                                        ...editingOrder,
-                                        quantity: Number(e.target.value)
-                                    })}
+                                    value={newOrder.quantity}
+                                    onChange={(e) => handleNewOrderChange('quantity', Number(e.target.value))}
                                     fullWidth
                                 />
                                 <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
                                     <DatePicker
                                         label="Prazo"
-                                        value={new Date(editingOrder.deadline)}
-                                        onChange={(date) => setEditingOrder({
-                                            ...editingOrder,
-                                            deadline: date ? date.toISOString().split('T')[0] : editingOrder.deadline
-                                        })}
+                                        value={newOrder.deadline}
+                                        onChange={(date) => handleNewOrderChange('deadline', date)}
                                     />
                                 </LocalizationProvider>
                                 <FormControl fullWidth>
-                                    <InputLabel>Status</InputLabel>
-                                    <Select
-                                        value={editingOrder.status}
-                                        label="Status"
-                                        onChange={(e) => setEditingOrder({
-                                            ...editingOrder,
-                                            status: e.target.value
-                                        })}
-                                    >
-                                        <MenuItem value="Aguardando">Aguardando</MenuItem>
-                                        <MenuItem value="Em Produção">Em Produção</MenuItem>
-                                        <MenuItem value="Concluído">Concluído</MenuItem>
-                                        <MenuItem value="Cancelado">Cancelado</MenuItem>
-                                    </Select>
-                                </FormControl>
-                                <FormControl fullWidth>
                                     <InputLabel>Responsável</InputLabel>
                                     <Select
-                                        value={editingOrder.assignedTo}
+                                        value={newOrder.assignedTo}
                                         label="Responsável"
-                                        onChange={(e) => setEditingOrder({
-                                            ...editingOrder,
-                                            assignedTo: e.target.value
-                                        })}
+                                        onChange={(e) => handleNewOrderChange('assignedTo', e.target.value)}
                                     >
                                         {employees.map(employee => (
                                             <MenuItem key={employee.id} value={employee.name}>
@@ -461,104 +607,40 @@ export default function Admin() {
                                     </Select>
                                 </FormControl>
                             </Box>
-                        )}
-                    </DialogContent>
-                    <DialogActions sx={{ p: 2 }}>
-                        <Button 
-                            onClick={handleCloseEditModal}
-                            sx={{ color: '#666' }}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            variant="contained"
-                            onClick={handleEditOrder}
-                            sx={{
-                                backgroundColor: '#1DB954',
-                                '&:hover': {
-                                    backgroundColor: '#18a449'
-                                }
-                            }}
-                        >
-                            Salvar
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                        </DialogContent>
+                        <DialogActions sx={{ p: 2 }}>
+                            <Button 
+                                onClick={handleCloseNewOrderModal}
+                                sx={{ color: '#666' }}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleAddNewOrder}
+                                sx={{
+                                    backgroundColor: '#1DB954',
+                                    '&:hover': {
+                                        backgroundColor: '#18a449'
+                                    }
+                                }}
+                            >
+                                Adicionar
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
 
-                {/* Modal de Nova Ordem */}
-                <Dialog 
-                    open={isNewOrderModalOpen} 
-                    onClose={handleCloseNewOrderModal}
-                    maxWidth="sm"
-                    fullWidth
-                >
-                    <DialogTitle sx={{ 
-                        backgroundColor: '#1DB954', 
-                        color: 'white',
-                        fontWeight: 'bold'
-                    }}>
-                        Nova Ordem de Produção
-                    </DialogTitle>
-                    <DialogContent sx={{ pt: 2 }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                            <TextField
-                                label="Produto"
-                                value={newOrder.product}
-                                onChange={(e) => handleNewOrderChange('product', e.target.value)}
-                                fullWidth
-                            />
-                            <TextField
-                                label="Quantidade"
-                                type="number"
-                                value={newOrder.quantity}
-                                onChange={(e) => handleNewOrderChange('quantity', Number(e.target.value))}
-                                fullWidth
-                            />
-                            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
-                                <DatePicker
-                                    label="Prazo"
-                                    value={newOrder.deadline}
-                                    onChange={(date) => handleNewOrderChange('deadline', date)}
-                                />
-                            </LocalizationProvider>
-                            <FormControl fullWidth>
-                                <InputLabel>Responsável</InputLabel>
-                                <Select
-                                    value={newOrder.assignedTo}
-                                    label="Responsável"
-                                    onChange={(e) => handleNewOrderChange('assignedTo', e.target.value)}
-                                >
-                                    {employees.map(employee => (
-                                        <MenuItem key={employee.id} value={employee.name}>
-                                            {employee.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Box>
-                    </DialogContent>
-                    <DialogActions sx={{ p: 2 }}>
-                        <Button 
-                            onClick={handleCloseNewOrderModal}
-                            sx={{ color: '#666' }}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            variant="contained"
-                            onClick={handleAddNewOrder}
-                            sx={{
-                                backgroundColor: '#1DB954',
-                                '&:hover': {
-                                    backgroundColor: '#18a449'
-                                }
-                            }}
-                        >
-                            Adicionar
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                    <style>{`
+                        @keyframes rotate {
+                            from { transform: rotate(0deg); }
+                            to { transform: rotate(360deg); }
+                        }
+                        .rotating {
+                            animation: rotate 1s linear infinite;
+                        }
+                    `}</style>
+                </Box>
             </Container>
-        </Box>
+        </Fade>
     );
 } 
