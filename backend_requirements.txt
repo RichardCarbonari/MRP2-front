@@ -95,75 +95,127 @@ Response:
 # Sistema completo de gerenciamento de equipes
 Endpoints necessários:
 ```
-GET /api/teams                # Lista todas as equipes
-POST /api/teams               # Cria nova equipe
-PUT /api/teams/:id           # Atualiza equipe existente
-DELETE /api/teams/:id        # Remove equipe (apenas se não houver membros)
-
-Modelo de Equipe:
+GET /api/admin/teams
+# Lista de todas as equipes
+Response:
 {
-    "id": string,            # UUID v4
-    "name": string,          # Nome da equipe
-    "leader": {              # Líder da equipe
-        "id": string,        # UUID v4 do funcionário
-        "name": string       # Nome completo do líder
-    },
-    "members": [             # Lista de membros da equipe
+    "teams": [
         {
-            "id": string,    # UUID v4 do funcionário
-            "name": string,  # Nome completo do membro
-            "role": string   # Função na equipe
-        }
-    ],
-    "projects": [            # Projetos associados à equipe
-        {
-            "id": string,    # UUID v4 do projeto
-            "name": string,  # Nome do projeto
-            "status": string # Status atual (em_andamento, concluído, pausado)
+            "id": string,            # UUID v4
+            "name": string,          # Nome da equipe
+            "type": string,          # Tipo da equipe (produção/manutenção)
+            "members": [             # Lista de membros da equipe
+                {
+                    "id": string,    # UUID v4 do funcionário
+                    "name": string   # Nome completo do membro
+                }
+            ],
+            "tools": [               # Lista de ferramentas da equipe
+                string
+            ],
+            "procedures": [          # Lista de procedimentos da equipe
+                string
+            ],
+            "metrics": {             # Métricas de produtividade
+                "daily": number,     # Produção do dia atual
+                "weekly": number,    # Produção da semana atual
+                "monthly": number    # Produção do mês atual
+            }
         }
     ]
 }
 
-# Endpoints adicionais necessários:
-POST /api/teams/:id/members  # Adiciona membro à equipe
-DELETE /api/teams/:id/members/:memberId # Remove membro da equipe
-PUT /api/teams/:id/leader    # Altera líder da equipe
+POST /api/admin/teams
+# Criação de novas equipes
+Request:
+{
+    "name": string,          # Nome da equipe
+    "type": string,          # Tipo da equipe (produção/manutenção)
+    "members": [             # Lista de membros da equipe
+        string
+    ],
+    "tools": [                # Lista de ferramentas da equipe
+        string
+    ],
+    "procedures": [           # Lista de procedimentos da equipe
+        string
+    ]
+}
+
+PUT /api/admin/teams/:id
+# Atualização de equipes existentes
+Request:
+{
+    "name": string,          # Novo nome da equipe
+    "type": string,          # Novo tipo da equipe (produção/manutenção)
+    "members": [             # Nova lista de membros da equipe
+        string
+    ],
+    "tools": [                # Nova lista de ferramentas da equipe
+        string
+    ],
+    "procedures": [           # Novo lista de procedimentos da equipe
+        string
+    ]
+}
+
+DELETE /api/admin/teams/:id
+# Remove equipe (apenas se não houver membros)
 ```
 
 ### 3.3 Manutenção (/maintenance-requests)
 # Sistema de gerenciamento de manutenção
 Endpoints necessários:
 ```
-GET /api/maintenance/requests  # Lista todos os pedidos de manutenção
-POST /api/maintenance/requests # Cria novo pedido
-PUT /api/maintenance/requests/:id # Atualiza pedido existente
-DELETE /api/maintenance/requests/:id # Cancela pedido (se ainda pendente)
-
-Modelo de Pedido de Manutenção:
+GET /api/maintenance/requests
+# Lista completa de solicitações
+Response:
 {
-    "id": string,              # UUID v4
+    "requests": [
+        {
+            "id": string,              # UUID v4
+            "equipment": string,       # Identificador do equipamento
+            "description": string,     # Descrição detalhada do problema
+            "priority": "high" | "medium" | "low", # Prioridade do pedido
+            "status": "pending" | "in_progress" | "completed", # Estado atual
+            "requestedBy": {           # Solicitante
+                "id": string,          # UUID v4 do funcionário
+                "name": string         # Nome do solicitante
+            },
+            "assignedTo": {            # Responsável pela manutenção
+                "id": string,          # UUID v4 do técnico
+                "name": string         # Nome do técnico
+            },
+            "createdAt": string,       # Data de criação (ISO)
+            "updatedAt": string,       # Data da última atualização (ISO)
+            "completedAt": string,     # Data de conclusão (ISO)
+            "department": string       # Departamento associado
+        }
+    ]
+}
+
+POST /api/maintenance/requests
+# Criação de solicitações de manutenção
+Request:
+{
     "equipment": string,       # Identificador do equipamento
     "description": string,     # Descrição detalhada do problema
     "priority": "high" | "medium" | "low", # Prioridade do pedido
-    "status": "pending" | "in_progress" | "completed", # Estado atual
-    "requestedBy": {           # Solicitante
-        "id": string,          # UUID v4 do funcionário
-        "name": string         # Nome do solicitante
-    },
-    "assignedTo": {            # Responsável pela manutenção
-        "id": string,          # UUID v4 do técnico
-        "name": string         # Nome do técnico
-    },
-    "createdAt": string,       # Data de criação (ISO)
-    "updatedAt": string,       # Data da última atualização (ISO)
-    "completedAt": string      # Data de conclusão (ISO)
+    "department": string       # Departamento associado
 }
 
-# Endpoints adicionais necessários:
-POST /api/maintenance/requests/:id/assign # Designa técnico
-POST /api/maintenance/requests/:id/start  # Inicia atendimento
-POST /api/maintenance/requests/:id/complete # Finaliza atendimento
-GET /api/maintenance/statistics # Relatórios e métricas
+PUT /api/maintenance/requests/:id
+# Atualização de status de pedidos
+Request:
+{
+    "status": "pending" | "in_progress" | "completed", # Novo estado do pedido
+    "assignedTo": string,    # Novo responsável pela manutenção
+    "completedAt": string,   # Nova data de conclusão (ISO)
+    "notes": string           # Novas notas e observações
+}
+
+DELETE /api/maintenance/requests/:id
+# Cancela pedido (se ainda pendente)
 ```
 
 ### 3.4 Inventário (/inventory)
@@ -245,24 +297,30 @@ POST /api/quality/reports/:id/attachments # Upload de anexos
 # Sistema de gestão financeira
 Endpoints necessários:
 ```
-GET /api/financial/transactions  # Lista transações
-POST /api/financial/transactions # Registra nova transação
-GET /api/financial/reports       # Relatórios financeiros
-
-Modelo de Transação:
+GET /api/admin/financial
+# Relatórios financeiros
+Response:
 {
-    "id": string,               # UUID v4
-    "type": "income" | "expense", # Tipo da transação
-    "category": string,         # Categoria (folha, materiais, etc)
-    "amount": number,           # Valor (sempre positivo)
-    "date": string,            # Data da transação (ISO)
-    "description": string,      # Descrição detalhada
-    "status": "pending" | "completed", # Estado atual
-    "attachments": [           # Documentos comprobatórios
+    "totalIncome": number,            # Total de receitas
+    "totalExpense": number,           # Total de despesas
+    "maintenanceCosts": number,        # Custos de manutenção
+    "budget": number,                  # Orçamento total
+    "transactions": [                  # Lista de transações
         {
-            "id": string,      # UUID v4 do arquivo
-            "url": string,     # URL do arquivo
-            "type": string     # Tipo do arquivo (nota fiscal, recibo, etc)
+            "id": string,               # UUID v4
+            "type": "income" | "expense", # Tipo da transação
+            "category": string,         # Categoria (folha, materiais, etc)
+            "amount": number,           # Valor (sempre positivo)
+            "date": string,             # Data da transação (ISO)
+            "description": string,       # Descrição detalhada
+            "status": "pending" | "completed", # Estado atual
+            "attachments": [            # Documentos comprobatórios
+                {
+                    "id": string,       # UUID v4 do arquivo
+                    "url": string,      # URL do arquivo
+                    "type": string      # Tipo do arquivo (nota fiscal, recibo, etc)
+                }
+            ]
         }
     ]
 }
