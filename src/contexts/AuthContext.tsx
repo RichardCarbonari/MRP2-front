@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '../services/authService';
 
 type UserRole = 'admin' | 'employee' | 'maintenance';
 
@@ -7,6 +8,11 @@ interface User {
   name: string;
   role: UserRole;
   email: string;
+}
+
+interface AuthResponse {
+  user: User;
+  token: string;
 }
 
 interface AuthContextType {
@@ -26,59 +32,46 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  // Simula verificação de token ao iniciar
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      if (parsedUser && typeof parsedUser.role === 'string' && 
+          ['admin', 'employee', 'maintenance'].includes(parsedUser.role)) {
+        setUser(parsedUser as User);
+      }
     }
   }, []);
 
   const login = async (email: string, password: string): Promise<User> => {
-    // Simulação de autenticação
-    // Em produção, isso seria uma chamada real à API
     try {
-      // Simula delay de rede
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      let mockUser: User;
-
-      // Simula diferentes tipos de usuário baseado no email
-      if (email.includes('admin')) {
-        mockUser = {
-          id: '1',
-          name: 'Administrador',
-          role: 'admin',
-          email: email
+      const response = await authService.login({ email, password }) as AuthResponse;
+      const { user: loggedUser, token } = response;
+      
+      if (typeof loggedUser.role === 'string' && 
+          ['admin', 'employee', 'maintenance'].includes(loggedUser.role)) {
+        const typedUser: User = {
+          ...loggedUser,
+          role: loggedUser.role as UserRole
         };
-      } else if (email.includes('maintenance')) {
-        mockUser = {
-          id: '3',
-          name: 'Manutenção',
-          role: 'maintenance',
-          email: email
-        };
+        
+        setUser(typedUser);
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(typedUser));
+        
+        return typedUser;
       } else {
-        mockUser = {
-          id: '2',
-          name: 'Funcionário',
-          role: 'employee',
-          email: email
-        };
+        throw new Error('Tipo de usuário inválido');
       }
-
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      return mockUser;
     } catch (error) {
       console.error('Erro no login:', error);
-      throw new Error('Falha na autenticação');
+      throw error;
     }
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
-    localStorage.removeItem('user');
   };
 
   const isAdmin = () => user?.role === 'admin';
@@ -90,11 +83,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     switch (user.role) {
       case 'admin':
-        return '/admin-home';
+        return '/admin/dashboard';
       case 'maintenance':
-        return '/maintenance-home';
+        return '/maintenance/dashboard';
       case 'employee':
-        return '/employee-home';
+        return '/employee/dashboard';
       default:
         return '/login';
     }

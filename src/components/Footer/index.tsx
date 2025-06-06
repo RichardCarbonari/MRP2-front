@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Container, Typography } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Container,
@@ -8,104 +8,73 @@ import {
     CardContent,
     Box,
     Chip,
-    LinearProgress
+    LinearProgress,
+    CircularProgress
 } from '@mui/material';
 import BuildIcon from '@mui/icons-material/Build';
 import PendingIcon from '@mui/icons-material/Pending';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { useAuth } from '../../contexts/AuthContext';
+import maintenanceService, { MaintenanceStats, MaintenanceRequest } from '../../services/maintenanceService';
 
 const MaintenanceHome = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const [stats, setStats] = useState<MaintenanceStats | null>(null);
+    const [recentRequests, setRecentRequests] = useState<MaintenanceRequest[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const [statsData, requestsData] = await Promise.all([
+                maintenanceService.getStats(),
+                maintenanceService.getAllRequests({ status: undefined, priority: undefined })
+            ]);
+            
+            setStats(statsData);
+            // Pegar os 3 mais recentes
+            setRecentRequests(requestsData.slice(0, 3));
+        } catch (error) {
+            console.error('Error loading data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const navigationButtons = [
         {
-            title: 'Pedidos de Manutenção',
-            description: 'Visualize e gerencie todos os pedidos de manutenção',
+            title: 'Gestão de Pedidos',
+            description: 'Visualize e resolva todos os pedidos de manutenção',
             icon: <AssignmentIcon sx={{ fontSize: 40, color: '#1DB954' }} />,
-            path: '/maintenance-requests'
-        }
-    ];
-
-    const stats = [
-        {
-            title: 'Pedidos Pendentes',
-            value: 5,
-            icon: <PendingIcon sx={{ fontSize: 40, color: '#ff9800' }} />,
-            color: '#ff9800'
-        },
-        {
-            title: 'Em Andamento',
-            value: 3,
-            icon: <BuildIcon sx={{ fontSize: 40, color: '#2196f3' }} />,
-            color: '#2196f3'
-        },
-        {
-            title: 'Concluídos Hoje',
-            value: 8,
-            icon: <CheckCircleIcon sx={{ fontSize: 40, color: '#4caf50' }} />,
-            color: '#4caf50'
-        },
-        {
-            title: 'Tempo Médio',
-            value: '2h 30min',
-            icon: <ScheduleIcon sx={{ fontSize: 40, color: '#9c27b0' }} />,
-            color: '#9c27b0'
-        }
-    ];
-
-    const recentRequests = [
-        {
-            id: 'REQ001',
-            equipment: 'Torno CNC',
-            priority: 'Alta',
-            status: 'Pendente',
-            requestedAt: '2024-03-20 09:30'
-        },
-        {
-            id: 'REQ002',
-            equipment: 'Fresadora',
-            priority: 'Média',
-            status: 'Em Andamento',
-            requestedAt: '2024-03-20 10:15'
-        },
-        {
-            id: 'REQ003',
-            equipment: 'Prensa Hidráulica',
-            priority: 'Baixa',
-            status: 'Pendente',
-            requestedAt: '2024-03-20 11:00'
+            path: '/maintenance/management'
         }
     ];
 
     const getPriorityColor = (priority: string) => {
-        switch (priority.toLowerCase()) {
-            case 'alta':
-                return '#f44336';
-            case 'média':
-                return '#ff9800';
-            case 'baixa':
-                return '#4caf50';
-            default:
-                return '#757575';
-        }
+        return maintenanceService.getPriorityColor(priority);
     };
 
     const getStatusColor = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'pendente':
-                return '#ff9800';
-            case 'em andamento':
-                return '#2196f3';
-            case 'concluído':
-                return '#4caf50';
-            default:
-                return '#757575';
-        }
+        return maintenanceService.getStatusColor(status);
     };
+
+    if (loading) {
+        return (
+            <Container maxWidth="xl">
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                    <CircularProgress size={60} sx={{ color: '#1DB954' }} />
+                </Box>
+            </Container>
+        );
+    }
 
     return (
         <Container maxWidth="xl">
@@ -194,14 +163,43 @@ const MaintenanceHome = () => {
                 </Typography>
 
                 <Grid container spacing={3} sx={{ mb: 6 }}>
-                    {stats.map((stat) => (
-                        <Grid item xs={12} sm={6} md={3} key={stat.title}>
+                    {stats && [
+                        {
+                            title: 'Pedidos Pendentes',
+                            value: stats.pending,
+                            icon: <PendingIcon sx={{ fontSize: 40, color: '#ff9800' }} />,
+                            color: '#ff9800',
+                            urgent: stats.highPriorityPending > 0
+                        },
+                        {
+                            title: 'Em Andamento',
+                            value: stats.inProgress,
+                            icon: <BuildIcon sx={{ fontSize: 40, color: '#2196f3' }} />,
+                            color: '#2196f3'
+                        },
+                        {
+                            title: 'Concluídos Hoje',
+                            value: stats.completedToday,
+                            icon: <CheckCircleIcon sx={{ fontSize: 40, color: '#4caf50' }} />,
+                            color: '#4caf50'
+                        },
+                        {
+                            title: 'Alta Prioridade',
+                            value: stats.highPriorityPending,
+                            icon: <PriorityHighIcon sx={{ fontSize: 40, color: '#f44336' }} />,
+                            color: '#f44336',
+                            urgent: stats.highPriorityPending > 0
+                        }
+                    ].map((stat, index) => (
+                        <Grid item xs={12} sm={6} md={3} key={index}>
                             <Card 
                                 sx={{ 
                                     height: '100%',
                                     background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                                     transition: 'transform 0.3s ease',
+                                    border: stat.urgent ? '2px solid #f44336' : 'none',
+                                    backgroundColor: stat.urgent ? '#ffebee' : 'inherit',
                                     '&:hover': {
                                         transform: 'translateY(-5px)'
                                     }
@@ -264,11 +262,13 @@ const MaintenanceHome = () => {
                                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                                     transition: 'transform 0.3s ease',
                                     cursor: 'pointer',
+                                    border: request.priority === 'Alta' && request.status === 'Pendente' 
+                                        ? '2px solid #f44336' : 'none',
                                     '&:hover': {
                                         transform: 'translateY(-5px)'
                                     }
                                 }}
-                                onClick={() => navigate('/maintenance-requests')}
+                                onClick={() => navigate('/maintenance/management')}
                             >
                                 <CardContent>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -276,7 +276,7 @@ const MaintenanceHome = () => {
                                             {request.equipment}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            {request.id}
+                                            {request.id.slice(0, 8)}...
                                         </Typography>
                                     </Box>
 
@@ -285,22 +285,30 @@ const MaintenanceHome = () => {
                                             label={request.priority}
                                             size="small"
                                             sx={{ 
-                                                backgroundColor: getPriorityColor(request.priority),
-                                                color: 'white'
+                                                backgroundColor: `${getPriorityColor(request.priority)}22`,
+                                                color: getPriorityColor(request.priority),
+                                                fontWeight: 'bold'
                                             }}
                                         />
                                         <Chip 
                                             label={request.status}
                                             size="small"
                                             sx={{ 
-                                                backgroundColor: getStatusColor(request.status),
-                                                color: 'white'
+                                                backgroundColor: `${getStatusColor(request.status)}22`,
+                                                color: getStatusColor(request.status),
+                                                fontWeight: 'bold'
                                             }}
                                         />
                                     </Box>
 
-                                    <Typography variant="body2" color="text.secondary">
-                                        Solicitado em: {request.requestedAt}
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                        Solicitado em: {new Date(request.requestedAt).toLocaleDateString('pt-BR')}
+                                    </Typography>
+
+                                    <Typography variant="body2" sx={{ mb: 2 }}>
+                                        {request.description.length > 100 
+                                            ? `${request.description.substring(0, 100)}...` 
+                                            : request.description}
                                     </Typography>
 
                                     <Box sx={{ mt: 2 }}>
@@ -309,7 +317,11 @@ const MaintenanceHome = () => {
                                         </Typography>
                                         <LinearProgress 
                                             variant="determinate" 
-                                            value={request.status === 'Em Andamento' ? 50 : 0}
+                                            value={
+                                                request.status === 'Concluída' ? 100 :
+                                                request.status === 'Em Andamento' ? 50 :
+                                                request.status === 'Agendada' ? 25 : 0
+                                            }
                                             sx={{ 
                                                 mt: 1,
                                                 backgroundColor: 'rgba(0,0,0,0.1)',

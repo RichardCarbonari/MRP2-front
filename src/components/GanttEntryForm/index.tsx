@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -20,7 +20,17 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ptBR } from 'date-fns/locale';
 
 // Estrutura das equipes e suas responsabilidades
-export const estruturaEquipes = {
+interface EquipeInfo {
+    nome: string;
+    etapas: string[];
+    descricao: string;
+}
+
+interface EstruturaEquipes {
+    [key: string]: EquipeInfo;
+}
+
+export const estruturaEquipes: EstruturaEquipes = {
     'Equipe Qualidade de Componentes': {
         nome: 'Equipe Qualidade de Componentes',
         etapas: [

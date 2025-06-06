@@ -21,6 +21,7 @@ import {
     ListItem,
     ListItemText,
     ListItemSecondaryAction,
+    MenuItem,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -42,11 +43,6 @@ interface Team {
     description: string;
     leader: string;
     members: TeamMember[];
-    performance: {
-        efficiency: number;
-        quality: number;
-        productivity: number;
-    };
 }
 
 export default function TeamsManagement() {
@@ -64,12 +60,7 @@ export default function TeamsManagement() {
                 availability: true
             },
             // Outros membros seriam carregados do backend
-        ],
-        performance: {
-            efficiency: 85,
-            quality: 92,
-            productivity: 88
-        }
+        ]
     })));
 
     const [openDialog, setOpenDialog] = useState(false);
@@ -150,36 +141,6 @@ export default function TeamsManagement() {
                                 </Box>
 
                                 <Typography variant="subtitle2" gutterBottom>
-                                    Performance
-                                </Typography>
-                                <Grid container spacing={2} sx={{ mb: 2 }}>
-                                    <Grid item xs={4}>
-                                        <Typography variant="caption" display="block">
-                                            Eficiência
-                                        </Typography>
-                                        <Typography variant="h6" color="primary">
-                                            {team.performance.efficiency}%
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={4}>
-                                        <Typography variant="caption" display="block">
-                                            Qualidade
-                                        </Typography>
-                                        <Typography variant="h6" color="primary">
-                                            {team.performance.quality}%
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={4}>
-                                        <Typography variant="caption" display="block">
-                                            Produtividade
-                                        </Typography>
-                                        <Typography variant="h6" color="primary">
-                                            {team.performance.productivity}%
-                                        </Typography>
-                                    </Grid>
-                                </Grid>
-
-                                <Typography variant="subtitle2" gutterBottom>
                                     Membros da Equipe
                                 </Typography>
                                 <List dense>
@@ -204,7 +165,6 @@ export default function TeamsManagement() {
                                 <Button
                                     startIcon={<PersonAddIcon />}
                                     onClick={() => handleAddMember(team.id)}
-                                    size="small"
                                     sx={{ color: '#1DB954' }}
                                 >
                                     Adicionar Membro
@@ -215,76 +175,133 @@ export default function TeamsManagement() {
                 ))}
             </Grid>
 
-            {/* Dialog para adicionar/editar equipe */}
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+            {/* Diálogo de Nova Equipe */}
+            <Dialog
+                open={openDialog}
+                onClose={() => setOpenDialog(false)}
+                maxWidth="sm"
+                fullWidth
+            >
                 <DialogTitle>
                     {selectedTeam ? 'Editar Equipe' : 'Nova Equipe'}
                 </DialogTitle>
                 <DialogContent>
                     <Box sx={{ pt: 2 }}>
-                        <TextField
-                            fullWidth
-                            label="Nome da Equipe"
-                            defaultValue={selectedTeam?.name}
-                            sx={{ mb: 2 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Descrição"
-                            multiline
-                            rows={3}
-                            defaultValue={selectedTeam?.description}
-                            sx={{ mb: 2 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Líder da Equipe"
-                            defaultValue={selectedTeam?.leader}
-                        />
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Nome da Equipe"
+                                    required
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Descrição"
+                                    multiline
+                                    rows={3}
+                                    required
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Líder da Equipe"
+                                    required
+                                />
+                            </Grid>
+                        </Grid>
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenDialog(false)}>
-                        Cancelar
-                    </Button>
-                    <Button 
+                    <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
+                    <Button
                         variant="contained"
                         sx={{ backgroundColor: '#1DB954', '&:hover': { backgroundColor: '#18a449' } }}
                     >
-                        Salvar
+                        {selectedTeam ? 'Salvar' : 'Criar'}
                     </Button>
                 </DialogActions>
             </Dialog>
 
-            {/* Dialog para adicionar membro */}
-            <Dialog open={openMemberDialog} onClose={() => setOpenMemberDialog(false)} maxWidth="sm" fullWidth>
+            {/* Diálogo de Novo Membro */}
+            <Dialog
+                open={openMemberDialog}
+                onClose={() => setOpenMemberDialog(false)}
+                maxWidth="sm"
+                fullWidth
+            >
                 <DialogTitle>
-                    Adicionar Membro à Equipe
+                    Adicionar Novo Membro
                 </DialogTitle>
                 <DialogContent>
                     <Box sx={{ pt: 2 }}>
-                        <TextField
-                            fullWidth
-                            label="Nome do Funcionário"
-                            sx={{ mb: 2 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Função"
-                            sx={{ mb: 2 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="Habilidades"
-                            helperText="Separe as habilidades por vírgula"
-                        />
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Nome do Membro"
+                                    required
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Função"
+                                    required
+                                    defaultValue=""
+                                >
+                                    <MenuItem value="tecnico">Técnico de Manutenção</MenuItem>
+                                    <MenuItem value="especialista">Especialista em Manutenção</MenuItem>
+                                    <MenuItem value="supervisor">Supervisor de Manutenção</MenuItem>
+                                    <MenuItem value="auxiliar">Auxiliar de Manutenção</MenuItem>
+                                    <MenuItem value="operador">Operador</MenuItem>
+                                    <MenuItem value="qualidade">Analista de Qualidade</MenuItem>
+                                    <MenuItem value="montador">Montador</MenuItem>
+                                </TextField>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Habilidades"
+                                    SelectProps={{
+                                        multiple: true
+                                    }}
+                                    defaultValue={[]}
+                                >
+                                    <MenuItem value="manutencao_preventiva">Manutenção Preventiva</MenuItem>
+                                    <MenuItem value="manutencao_corretiva">Manutenção Corretiva</MenuItem>
+                                    <MenuItem value="eletrica">Manutenção Elétrica</MenuItem>
+                                    <MenuItem value="mecanica">Manutenção Mecânica</MenuItem>
+                                    <MenuItem value="hidraulica">Manutenção Hidráulica</MenuItem>
+                                    <MenuItem value="automacao">Automação</MenuItem>
+                                    <MenuItem value="soldagem">Soldagem</MenuItem>
+                                    <MenuItem value="montagem">Montagem</MenuItem>
+                                    <MenuItem value="qualidade">Controle de Qualidade</MenuItem>
+                                    <MenuItem value="gestao">Gestão de Equipe</MenuItem>
+                                </TextField>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Disponibilidade"
+                                    required
+                                    defaultValue="true"
+                                >
+                                    <MenuItem value="true">Disponível</MenuItem>
+                                    <MenuItem value="false">Ocupado</MenuItem>
+                                </TextField>
+                            </Grid>
+                        </Grid>
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenMemberDialog(false)}>
-                        Cancelar
-                    </Button>
-                    <Button 
+                    <Button onClick={() => setOpenMemberDialog(false)}>Cancelar</Button>
+                    <Button
                         variant="contained"
                         sx={{ backgroundColor: '#1DB954', '&:hover': { backgroundColor: '#18a449' } }}
                     >

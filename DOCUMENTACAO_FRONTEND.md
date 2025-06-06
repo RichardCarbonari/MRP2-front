@@ -167,17 +167,3 @@ src/
 3. Filtra por status/prioridade
 4. Atualiza status e adiciona notas
 
-## Melhorias Futuras
-
-### Planejadas
-1. Implementação de PWA
-2. Notificações push
-3. Modo offline
-4. Relatórios exportáveis
-5. Dashboard customizável
-
-### Em Consideração
-1. Chat integrado
-2. Scanner de QR Code
-3. Integração com calendário
-4. App mobile nativo 

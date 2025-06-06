@@ -31,7 +31,8 @@ const Header = () => {
             case 'employee':
                 return [
                     { text: 'Home', path: '/employee-home' },
-                    { text: 'Produção', path: '/employee' },
+                    { text: 'Área do Funcionário', path: '/employee' },
+                    { text: 'Manutenção', path: '/maintenance-requests' },
                     { text: 'Qualidade', path: '/quality-register' }
                 ];
             default:
@@ -46,7 +47,7 @@ const Header = () => {
             case 'maintenance':
                 return 'MRP2 - Manutenção';
             case 'employee':
-                return 'MRP2 - Funcionário';
+                return 'MRP2 - Área do Funcionário';
             default:
                 return 'MRP2';
         }

@@ -99,6 +99,22 @@ export default function Maintenance() {
     const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
     const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
     const [selectedMaintenance, setSelectedMaintenance] = useState<MaintenanceRecord | null>(null);
+    const [newEquipment, setNewEquipment] = useState<Omit<Equipment, 'id'>>({
+        name: '',
+        type: '',
+        status: 'operational',
+        lastMaintenance: new Date(),
+        nextMaintenance: new Date()
+    });
+    const [newMaintenance, setNewMaintenance] = useState<Omit<MaintenanceRecord, 'id'>>({
+        equipmentId: 0,
+        type: 'preventive',
+        description: '',
+        date: new Date(),
+        technician: '',
+        cost: 0,
+        status: 'scheduled'
+    });
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -150,6 +166,48 @@ export default function Maintenance() {
         setIsLoading(true);
         // Simular carregamento
         setTimeout(() => setIsLoading(false), 1000);
+    };
+
+    const handleDeleteEquipment = (id: number) => {
+        setEquipment(equipment.filter(e => e.id !== id));
+    };
+
+    const handleDeleteMaintenance = (id: number) => {
+        setMaintenanceRecords(records => records.filter(r => r.id !== id));
+    };
+
+    const handleSaveEquipment = () => {
+        if (selectedEquipment) {
+            // Editar equipamento existente
+            setEquipment(equipment.map(e => 
+                e.id === selectedEquipment.id 
+                    ? { ...selectedEquipment, ...newEquipment }
+                    : e
+            ));
+        } else {
+            // Adicionar novo equipamento
+            const newId = Math.max(...equipment.map(e => e.id), 0) + 1;
+            setEquipment([...equipment, { id: newId, ...newEquipment }]);
+        }
+        setIsEquipmentDialogOpen(false);
+    };
+
+    const handleSaveMaintenance = () => {
+        if (selectedMaintenance) {
+            // Editar manutenção existente
+            setMaintenanceRecords(records => 
+                records.map(r => 
+                    r.id === selectedMaintenance.id 
+                        ? { ...selectedMaintenance, ...newMaintenance }
+                        : r
+                )
+            );
+        } else {
+            // Adicionar nova manutenção
+            const newId = Math.max(...maintenanceRecords.map(r => r.id), 0) + 1;
+            setMaintenanceRecords([...maintenanceRecords, { id: newId, ...newMaintenance }]);
+        }
+        setIsMaintenanceDialogOpen(false);
     };
 
     return (
@@ -356,7 +414,7 @@ export default function Maintenance() {
                                                 >
                                                     <EditIcon />
                                                 </IconButton>
-                                                <IconButton color="error">
+                                                <IconButton color="error" onClick={() => handleDeleteEquipment(item.id)}>
                                                     <DeleteIcon />
                                                 </IconButton>
                                             </TableCell>
@@ -478,7 +536,7 @@ export default function Maintenance() {
                                                 >
                                                     <EditIcon />
                                                 </IconButton>
-                                                <IconButton color="error">
+                                                <IconButton color="error" onClick={() => handleDeleteMaintenance(record.id)}>
                                                     <DeleteIcon />
                                                 </IconButton>
                                             </TableCell>
@@ -499,13 +557,67 @@ export default function Maintenance() {
                         <DialogTitle sx={{ backgroundColor: '#1DB954', color: 'white' }}>
                             {selectedEquipment ? 'Editar Equipamento' : 'Novo Equipamento'}
                         </DialogTitle>
-                        <DialogContent sx={{ pt: 2 }}>
-                            {/* Formulário de equipamento aqui */}
+                        <DialogContent sx={{ pt: 3 }}>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Nome do Equipamento"
+                                        value={selectedEquipment?.name || newEquipment.name}
+                                        onChange={(e) => setNewEquipment({ ...newEquipment, name: e.target.value })}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Tipo"
+                                        value={selectedEquipment?.type || newEquipment.type}
+                                        onChange={(e) => setNewEquipment({ ...newEquipment, type: e.target.value })}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Status</InputLabel>
+                                        <Select
+                                            value={selectedEquipment?.status || newEquipment.status}
+                                            label="Status"
+                                            onChange={(e) => setNewEquipment({ ...newEquipment, status: e.target.value as 'operational' | 'maintenance' | 'broken' })}
+                                        >
+                                            <MenuItem value="operational">Operacional</MenuItem>
+                                            <MenuItem value="maintenance">Em Manutenção</MenuItem>
+                                            <MenuItem value="broken">Quebrado</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+                                        <DatePicker
+                                            label="Última Manutenção"
+                                            value={selectedEquipment?.lastMaintenance || newEquipment.lastMaintenance}
+                                            onChange={(date) => setNewEquipment({ ...newEquipment, lastMaintenance: date || new Date() })}
+                                            slotProps={{ textField: { fullWidth: true } }}
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+                                        <DatePicker
+                                            label="Próxima Manutenção"
+                                            value={selectedEquipment?.nextMaintenance || newEquipment.nextMaintenance}
+                                            onChange={(date) => setNewEquipment({ ...newEquipment, nextMaintenance: date || new Date() })}
+                                            slotProps={{ textField: { fullWidth: true } }}
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                            </Grid>
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={() => setIsEquipmentDialogOpen(false)}>Cancelar</Button>
                             <Button
                                 variant="contained"
+                                onClick={handleSaveEquipment}
                                 sx={{
                                     backgroundColor: '#1DB954',
                                     '&:hover': {
@@ -527,13 +639,99 @@ export default function Maintenance() {
                         <DialogTitle sx={{ backgroundColor: '#1DB954', color: 'white' }}>
                             {selectedMaintenance ? 'Editar Manutenção' : 'Nova Manutenção'}
                         </DialogTitle>
-                        <DialogContent sx={{ pt: 2 }}>
-                            {/* Formulário de manutenção aqui */}
+                        <DialogContent sx={{ pt: 3 }}>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Equipamento</InputLabel>
+                                        <Select
+                                            value={selectedMaintenance?.equipmentId || newMaintenance.equipmentId}
+                                            label="Equipamento"
+                                            onChange={(e) => setNewMaintenance({ ...newMaintenance, equipmentId: Number(e.target.value) })}
+                                        >
+                                            {equipment.map((eq) => (
+                                                <MenuItem key={eq.id} value={eq.id}>{eq.name}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Tipo</InputLabel>
+                                        <Select
+                                            value={selectedMaintenance?.type || newMaintenance.type}
+                                            label="Tipo"
+                                            onChange={(e) => setNewMaintenance({ ...newMaintenance, type: e.target.value as 'preventive' | 'corrective' })}
+                                        >
+                                            <MenuItem value="preventive">Preventiva</MenuItem>
+                                            <MenuItem value="corrective">Corretiva</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Descrição"
+                                        value={selectedMaintenance?.description || newMaintenance.description}
+                                        onChange={(e) => setNewMaintenance({ ...newMaintenance, description: e.target.value })}
+                                        multiline
+                                        rows={4}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+                                        <DatePicker
+                                            label="Data"
+                                            value={selectedMaintenance?.date || newMaintenance.date}
+                                            onChange={(date) => setNewMaintenance({ ...newMaintenance, date: date || new Date() })}
+                                            slotProps={{ textField: { fullWidth: true } }}
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Técnico Responsável"
+                                        value={selectedMaintenance?.technician || newMaintenance.technician}
+                                        onChange={(e) => setNewMaintenance({ ...newMaintenance, technician: e.target.value })}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Custo"
+                                        type="number"
+                                        value={selectedMaintenance?.cost || newMaintenance.cost}
+                                        onChange={(e) => setNewMaintenance({ ...newMaintenance, cost: Number(e.target.value) })}
+                                        required
+                                        InputProps={{
+                                            startAdornment: 'R$'
+                                        }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Status</InputLabel>
+                                        <Select
+                                            value={selectedMaintenance?.status || newMaintenance.status}
+                                            label="Status"
+                                            onChange={(e) => setNewMaintenance({ ...newMaintenance, status: e.target.value as 'scheduled' | 'in_progress' | 'completed' })}
+                                        >
+                                            <MenuItem value="scheduled">Agendada</MenuItem>
+                                            <MenuItem value="in_progress">Em Andamento</MenuItem>
+                                            <MenuItem value="completed">Concluída</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                            </Grid>
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={() => setIsMaintenanceDialogOpen(false)}>Cancelar</Button>
                             <Button
                                 variant="contained"
+                                onClick={handleSaveMaintenance}
                                 sx={{
                                     backgroundColor: '#1DB954',
                                     '&:hover': {

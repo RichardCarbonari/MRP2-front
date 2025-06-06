@@ -143,5 +143,36 @@ export const teamsConfig: Record<string, TeamConfig> = {
             'Checklist de inspeção final',
             'Procedimento de etiquetagem'
         ]
+    },
+    'maintenance': {
+        id: 'maintenance',
+        name: 'Equipe de Manutenção',
+        description: 'Responsável pela manutenção preventiva e corretiva dos equipamentos',
+        responsibilities: [
+            'Manutenção preventiva',
+            'Manutenção corretiva',
+            'Gestão de peças de reposição',
+            'Diagnóstico de problemas',
+            'Calibração de equipamentos'
+        ],
+        tools: [
+            { id: 1, name: 'Kit de Ferramentas Completo', description: 'Para manutenção geral' },
+            { id: 2, name: 'Multímetro Industrial', description: 'Para diagnósticos elétricos' },
+            { id: 3, name: 'Calibradores', description: 'Para ajuste de equipamentos' },
+            { id: 4, name: 'Osciloscópio', description: 'Para análise de sinais' }
+        ],
+        materials: [
+            { id: 1, name: 'Peças de Reposição', type: 'Componentes' },
+            { id: 2, name: 'Lubrificantes', type: 'Consumível' },
+            { id: 3, name: 'EPIs', type: 'Segurança' },
+            { id: 4, name: 'Materiais de Limpeza', type: 'Consumível' }
+        ],
+        specificProcedures: [
+            'Protocolo de manutenção preventiva',
+            'Checklist de inspeção de equipamentos',
+            'Procedimento de manutenção corretiva',
+            'Gestão de ordem de serviço',
+            'Controle de peças e materiais'
+        ]
     }
 }; 

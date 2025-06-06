@@ -11,6 +11,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import MaintenanceHome from './pages/MaintenanceHome';
 import MaintenanceRequests from './pages/MaintenanceRequests';
+import MaintenanceManagement from './pages/MaintenanceManagement';
 import AdminHome from './pages/AdminHome';
 import EmployeeHome from './pages/EmployeeHome';
 import Admin from './pages/Admin';
@@ -58,7 +59,7 @@ function App() {
             <CssBaseline />
             <AuthProvider>
                 <TimerProvider>
-                    <BrowserRouter>
+                    <BrowserRouter future={{ v7_relativeSplatPath: true }}>
                         <Routes>
                             <Route path="/login" element={<Login />} />
                             <Route path="/" element={<Root />} />
@@ -165,8 +166,16 @@ function App() {
                             <Route 
                                 path="/financial-input" 
                                 element={
-                                    <ProtectedRoute allowedRoles={['employee']}>
+                                    <ProtectedRoute allowedRoles={['admin']}>
                                         <FinancialInput />
+                                    </ProtectedRoute>
+                                } 
+                            />
+                            <Route 
+                                path="/maintenance-requests" 
+                                element={
+                                    <ProtectedRoute allowedRoles={['employee', 'maintenance']}>
+                                        <MaintenanceRequests />
                                     </ProtectedRoute>
                                 } 
                             />
@@ -181,10 +190,10 @@ function App() {
                                 } 
                             />
                             <Route 
-                                path="/maintenance-requests" 
+                                path="/maintenance/management" 
                                 element={
                                     <ProtectedRoute allowedRoles={['maintenance']}>
-                                        <MaintenanceRequests />
+                                        <MaintenanceManagement />
                                     </ProtectedRoute>
                                 } 
                             />

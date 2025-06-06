@@ -2,7 +2,7 @@ import { Box, Button, Container, Grid, Typography, Card, CardContent, Fade, Zoom
 import { useNavigate } from 'react-router-dom';
 import PersonIcon from '@mui/icons-material/Person';
 import BuildIcon from '@mui/icons-material/Build';
-import SettingsIcon from '@mui/icons-material/Settings';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 const EmployeeHome = () => {
   const navigate = useNavigate();
@@ -16,16 +16,16 @@ const EmployeeHome = () => {
     },
     { 
       text: 'Manutenção', 
-      path: '/maintenance',
+      path: '/maintenance-requests',
       icon: <BuildIcon sx={{ fontSize: 40 }} />,
       description: 'Abra chamados de manutenção e acompanhe o status'
     },
     { 
-      text: 'Configurações', 
-      path: '/settings',
-      icon: <SettingsIcon sx={{ fontSize: 40 }} />,
-      description: 'Altere o tema e faça backup dos seus dados'
-    },
+      text: 'Qualidade', 
+      path: '/quality-register',
+      icon: <AssessmentIcon sx={{ fontSize: 40 }} />,
+      description: 'Registre e acompanhe os indicadores de qualidade'
+    }
   ];
 
   return (

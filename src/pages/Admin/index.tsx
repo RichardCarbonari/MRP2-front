@@ -335,7 +335,7 @@ export default function Admin() {
                                             Controle de Tempo
                                         </Typography>
                                         <Box sx={{ mt: 2 }}>
-                                            <TimerComponent />
+                                            <TimerComponent estimatedTime={30} />
                                         </Box>
                                     </CardContent>
                                 </Card>

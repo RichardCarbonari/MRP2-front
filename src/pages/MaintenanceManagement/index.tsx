@@ -41,7 +41,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import DoneIcon from '@mui/icons-material/Done';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import maintenanceService, { MaintenanceRequest, MaintenanceStats } from '../../services/maintenanceService';
@@ -180,8 +179,6 @@ const MaintenanceManagement = () => {
                 return <AssignmentIcon />;
         }
     };
-
-    const filteredRequests = requests;
 
     return (
         <Fade in={true} timeout={800}>
@@ -354,7 +351,7 @@ const MaintenanceManagement = () => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {filteredRequests.map((request) => (
+                                    {requests.map((request) => (
                                         <TableRow 
                                             key={request.id}
                                             sx={{ 
