@@ -23,26 +23,6 @@ import {
 } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip as ChartTooltip,
-    Legend,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    ChartTooltip,
-    Legend
-);
 
 interface QualityReport {
     id: number;
@@ -124,33 +104,6 @@ export default function QualityAdmin() {
         }
     };
 
-    // Dados para o gráfico
-    const chartData = {
-        labels: ['Defeito Visual', 'Falha Funcional', 'Dimensões Incorretas', 'Outros'],
-        datasets: [
-            {
-                label: 'Quantidade de Problemas',
-                data: [4, 6, 2, 3],
-                backgroundColor: '#1DB95480',
-                borderColor: '#1DB954',
-                borderWidth: 1,
-            },
-        ],
-    };
-
-    const chartOptions = {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'top' as const,
-            },
-            title: {
-                display: true,
-                text: 'Distribuição de Problemas por Tipo',
-            },
-        },
-    };
-
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Box sx={{ mb: 4 }}>
@@ -198,13 +151,6 @@ export default function QualityAdmin() {
             </Box>
 
             <Grid container spacing={3}>
-                {/* Gráfico */}
-                <Grid item xs={12}>
-                    <Paper sx={{ p: 3 }}>
-                        <Bar options={chartOptions} data={chartData} />
-                    </Paper>
-                </Grid>
-
                 {/* Lista de Problemas */}
                 <Grid item xs={12}>
                     <Paper sx={{ p: 3 }}>
@@ -308,8 +254,8 @@ export default function QualityAdmin() {
                     <Button
                         variant="contained"
                         sx={{ 
-                            backgroundColor: '#1DB954',
-                            '&:hover': { backgroundColor: '#18a449' }
+                            backgroundColor: '#2E7D32',
+                            '&:hover': { backgroundColor: '#1B5E20' }
                         }}
                     >
                         Confirmar Resolução

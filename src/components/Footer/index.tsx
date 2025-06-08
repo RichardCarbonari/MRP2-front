@@ -1,50 +1,104 @@
-import { Box, Container, Typography } from '@mui/material';
+import React from 'react';
+import { 
+  Box, 
+  Container, 
+  Typography, 
+  Link
+} from '@mui/material';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 
 const Footer = () => {
     const location = useLocation();
-    const { userType } = useAuth();
-
-    const getFooterTitle = () => {
-        switch (userType) {
-            case 'admin':
-                return 'MRP2 - Área Administrativa';
-            case 'maintenance':
-                return 'MRP2 - Área de Manutenção';
-            case 'employee':
-                return 'MRP2 - Área do Funcionário';
-            default:
-                return 'MRP2';
-        }
-    };
 
     if (location.pathname === '/login') {
         return null;
     }
+
+    const currentYear = new Date().getFullYear();
 
     return (
         <Box
             component="footer"
             sx={{
                 width: '100%',
-                backgroundColor: '#1DB954',
-                color: 'white',
-                mt: 'auto'
+                backgroundColor: '#f8f9fa',
+                borderTop: '1px solid #e1e4e8',
+                mt: 'auto',
+                py: { xs: 1.5, sm: 2 }
             }}
         >
             <Container maxWidth="xl">
-                <Box sx={{ 
-                    py: 2,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                }}>
-                    <Typography variant="body2">
-                        © {new Date().getFullYear()} {getFooterTitle()}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        justifyContent: { xs: 'center', sm: 'space-between' },
+                        alignItems: 'center',
+                        gap: { xs: 1, sm: 2 },
+                        textAlign: { xs: 'center', sm: 'left' }
+                    }}
+                >
+                    {/* Copyright */}
+                    <Typography 
+                        variant="body2" 
+                        color="text.secondary" 
+                        sx={{ 
+                            fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                            order: { xs: 2, sm: 1 }
+                        }}
+                    >
+                        © {currentYear} <span style={{ color: '#2E7D32', fontWeight: '500' }}>MRP2</span>
                     </Typography>
-                    <Typography variant="body2">
-                        Versão 1.0.0
+
+                    {/* Links */}
+                    <Box 
+                        sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: { xs: 2, sm: 3 },
+                            order: { xs: 1, sm: 2 }
+                        }}
+                    >
+                        <Link
+                            href="#"
+                            color="text.secondary"
+                            sx={{
+                                textDecoration: 'none',
+                                fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                                '&:hover': {
+                                    color: '#2E7D32',
+                                    textDecoration: 'underline'
+                                },
+                            }}
+                        >
+                            Suporte
+                        </Link>
+                        <Link
+                            href="#"
+                            color="text.secondary"
+                            sx={{
+                                textDecoration: 'none',
+                                fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                                '&:hover': {
+                                    color: '#2E7D32',
+                                    textDecoration: 'underline'
+                                },
+                            }}
+                        >
+                            Contato
+                        </Link>
+                    </Box>
+
+                    {/* Version */}
+                    <Typography 
+                        variant="caption" 
+                        color="text.secondary" 
+                        sx={{ 
+                            fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                            order: { xs: 3, sm: 3 }
+                        }}
+                    >
+                        v2.1.0
                     </Typography>
                 </Box>
             </Container>

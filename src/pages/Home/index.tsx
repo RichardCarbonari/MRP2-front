@@ -18,7 +18,7 @@ const Home = () => {
     },
     { 
       text: 'Produção', 
-      path: '/admin',
+      path: '/planning',
       icon: <FactoryIcon sx={{ fontSize: 40 }} />,
       description: 'Gerencie ordens de produção e acompanhe o status'
     },
@@ -55,7 +55,7 @@ const Home = () => {
             component="h1" 
             gutterBottom 
             sx={{
-              color: '#1DB954',
+              color: '#2E7D32',
               fontWeight: 'bold',
               position: 'relative',
               display: 'inline-block',
@@ -67,7 +67,7 @@ const Home = () => {
                 left: '25%',
                 width: '50%',
                 height: 4,
-                backgroundColor: '#1DB954',
+                backgroundColor: '#2E7D32',
                 borderRadius: 2
               }
             }}
@@ -76,10 +76,10 @@ const Home = () => {
           </Typography>
           <Grid container spacing={3} justifyContent="center">
             {navigationButtons.map((button, index) => (
-              <Grid item xs={12} sm={6} md={4} key={button.path}>
+              <Grid item xs={12} sm={6} md={4} key={button.text}>
                 <Zoom in={true} style={{ transitionDelay: `${index * 100}ms` }}>
                   <Card 
-                    onClick={() => navigate(button.path)}
+                    onClick={() => button.path && navigate(button.path)}
                     sx={{
                       height: '100%',
                       cursor: 'pointer',
@@ -91,7 +91,7 @@ const Home = () => {
                         boxShadow: '0 12px 20px rgba(0,0,0,0.15)',
                         '& .icon': {
                           transform: 'scale(1.1)',
-                          color: '#1DB954'
+                          color: '#2E7D32'
                         }
                       }
                     }}
@@ -120,7 +120,7 @@ const Home = () => {
                         gutterBottom
                         sx={{ 
                           fontWeight: 'bold',
-                          color: '#1DB954'
+                          color: '#2E7D32'
                         }}
                       >
                         {button.text}

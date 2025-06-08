@@ -31,43 +31,104 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
+interface ProductSales {
+    category: string;
+    unitsSold: number;
+    revenue: number;
+    averagePrice: number;
+    profitMargin: number;
+}
+
 interface FinancialMetrics {
     operationalCosts: {
         labor: number;
-        materials: number;
-        equipment: number;
+        components: number;
+        logistics: number;
         utilities: number;
         maintenance: number;
         total: number;
     };
-    revenue: {
-        totalSales: number;
-        averageUnitPrice: number;
-        unitsProduced: number;
-    };
+    productSales: ProductSales[];
+    totalRevenue: number;
+    totalCosts: number;
     grossProfit: number;
     netProfit: number;
     profitMargin: number;
 }
 
-// Dados simulados
+// Dados simulados alinhados com categorias do inventário
 const mockFinancialData: FinancialMetrics = {
     operationalCosts: {
-        labor: 45000,
-        materials: 75000,
-        equipment: 15000,
-        utilities: 8000,
-        maintenance: 12000,
-        total: 155000
+        labor: 35000,        // Salários e encargos
+        components: 180000,  // Compra de componentes
+        logistics: 12000,    // Frete, armazenamento
+        utilities: 8000,     // Energia, água, telecomunicações
+        maintenance: 5000,   // Manutenção de equipamentos
+        total: 240000
     },
-    revenue: {
-        totalSales: 250000,
-        averageUnitPrice: 2500,
-        unitsProduced: 100
-    },
-    grossProfit: 95000,
-    netProfit: 70000,
-    profitMargin: 28
+    productSales: [
+        {
+            category: 'Processador',
+            unitsSold: 85,
+            revenue: 80750,
+            averagePrice: 950,
+            profitMargin: 22
+        },
+        {
+            category: 'Placa de Vídeo',
+            unitsSold: 28,
+            revenue: 51800,
+            averagePrice: 1850,
+            profitMargin: 25
+        },
+        {
+            category: 'Placa-mãe',
+            unitsSold: 32,
+            revenue: 20800,
+            averagePrice: 650,
+            profitMargin: 20
+        },
+        {
+            category: 'Memória RAM',
+            unitsSold: 120,
+            revenue: 33600,
+            averagePrice: 280,
+            profitMargin: 18
+        },
+        {
+            category: 'SSD',
+            unitsSold: 95,
+            revenue: 30400,
+            averagePrice: 320,
+            profitMargin: 15
+        },
+        {
+            category: 'Fonte',
+            unitsSold: 67,
+            revenue: 25460,
+            averagePrice: 380,
+            profitMargin: 12
+        },
+        {
+            category: 'Periféricos',
+            unitsSold: 261,
+            revenue: 43520,
+            averagePrice: 167,
+            profitMargin: 28
+        },
+        {
+            category: 'Software',
+            unitsSold: 200,
+            revenue: 90000,
+            averagePrice: 450,
+            profitMargin: 35
+        }
+    ],
+    totalRevenue: 376130,
+    totalCosts: 240000,
+    grossProfit: 136130,
+    netProfit: 98450,
+    profitMargin: 26.2
 };
 
 export default function Financial() {
@@ -89,7 +150,7 @@ export default function Financial() {
     };
 
     const getPerformanceColor = (value: number, threshold: number) => {
-        return value >= threshold ? '#1DB954' : '#ff4444';
+        return value >= threshold ? '#2E7D32' : '#ff4444';
     };
 
     return (
@@ -106,7 +167,7 @@ export default function Financial() {
                     <Typography 
                         variant="h4" 
                         sx={{ 
-                            color: '#1DB954', 
+                            color: '#2E7D32', 
                             fontWeight: 'bold',
                             position: 'relative',
                             '&::after': {
@@ -116,12 +177,12 @@ export default function Financial() {
                                 left: 0,
                                 width: '60%',
                                 height: 4,
-                                backgroundColor: '#1DB954',
+                                backgroundColor: '#2E7D32',
                                 borderRadius: 2
                             }
                         }}
                     >
-                        Análise Financeira
+                        💰 Análise Financeira - Hardware de Computadores
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button
@@ -129,8 +190,8 @@ export default function Financial() {
                             startIcon={<RefreshIcon className={isLoading ? 'rotating' : ''} />}
                             onClick={handleRefresh}
                             sx={{ 
-                                borderColor: '#1DB954',
-                                color: '#1DB954',
+                                borderColor: '#2E7D32',
+                                color: '#2E7D32',
                                 '&:hover': {
                                     borderColor: '#18a34b',
                                     backgroundColor: 'rgba(29, 185, 84, 0.1)'
@@ -144,7 +205,7 @@ export default function Financial() {
                             startIcon={<AddIcon />}
                             onClick={() => navigate('/financial-input')}
                             sx={{ 
-                                bgcolor: '#1DB954',
+                                bgcolor: '#2E7D32',
                                 '&:hover': {
                                     bgcolor: '#18a34b'
                                 },
@@ -159,32 +220,40 @@ export default function Financial() {
                 {/* Métricas Principais */}
                 <Box sx={{ 
                     display: 'grid', 
-                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, 
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, 
                     gap: 3, 
                     mb: 4 
                 }}>
                     {[
                         {
+                            title: 'Receita Total',
+                            value: mockFinancialData.totalRevenue,
+                            icon: <MoneyIcon />,
+                            trend: '+12% em relação ao mês anterior',
+                            trendIcon: <TrendingUpIcon />,
+                            trendColor: '#2E7D32'
+                        },
+                        {
                             title: 'Lucro Bruto',
                             value: mockFinancialData.grossProfit,
                             icon: <MoneyIcon />,
-                            trend: '+15% em relação ao mês anterior',
+                            trend: '+15% crescimento mensal',
                             trendIcon: <TrendingUpIcon />,
-                            trendColor: '#1DB954'
+                            trendColor: '#2E7D32'
                         },
                         {
                             title: 'Lucro Líquido',
                             value: mockFinancialData.netProfit,
                             icon: <MoneyIcon />,
-                            trend: `Margem de ${mockFinancialData.profitMargin}%`,
+                            trend: `Margem de ${mockFinancialData.profitMargin.toFixed(1)}%`,
                             trendIcon: <TrendingUpIcon />,
-                            trendColor: '#1DB954'
+                            trendColor: '#2E7D32'
                         },
                         {
                             title: 'Custos Operacionais',
-                            value: mockFinancialData.operationalCosts.total,
+                            value: mockFinancialData.totalCosts,
                             icon: <TimelineIcon />,
-                            trend: '62% da receita total',
+                            trend: '63.8% da receita total',
                             trendIcon: <TrendingDownIcon />,
                             trendColor: '#ff4444'
                         }
@@ -202,7 +271,7 @@ export default function Financial() {
                                 <CardContent>
                                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                         <Box sx={{ 
-                                            color: '#1DB954',
+                                            color: '#2E7D32',
                                             mr: 1,
                                             display: 'flex',
                                             alignItems: 'center',
@@ -212,11 +281,12 @@ export default function Financial() {
                                         }}>
                                             {metric.icon}
                                         </Box>
-                                        <Typography variant="h6">{metric.title}</Typography>
+                                        <Typography variant="h6" fontSize="0.9rem">{metric.title}</Typography>
                                     </Box>
                                     <Typography variant="h4" sx={{ 
                                         color: getPerformanceColor(metric.value, 0),
-                                        fontWeight: 'bold'
+                                        fontWeight: 'bold',
+                                        fontSize: '1.8rem'
                                     }}>
                                         {formatCurrency(metric.value)}
                                     </Typography>
@@ -229,7 +299,7 @@ export default function Financial() {
                                         }}>
                                             {metric.trendIcon}
                                         </Box>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
                                             {metric.trend}
                                         </Typography>
                                     </Box>
@@ -238,6 +308,92 @@ export default function Financial() {
                         </Zoom>
                     ))}
                 </Box>
+
+                {/* Vendas por Categoria de Produto */}
+                <Paper sx={{ 
+                    p: 3, 
+                    mb: 4,
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                }}>
+                    <Typography variant="h6" sx={{ 
+                        mb: 3,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        '&::before': {
+                            content: '""',
+                            width: 4,
+                            height: 24,
+                            backgroundColor: '#2E7D32',
+                            borderRadius: 2
+                        }
+                    }}>
+                        📊 Vendas por Categoria de Produto
+                    </Typography>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>Categoria</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>Unidades Vendidas</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>Receita</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>Preço Médio</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>Margem de Lucro</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>Performance</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {mockFinancialData.productSales.map((product) => (
+                                    <TableRow 
+                                        key={product.category}
+                                        hover
+                                        sx={{
+                                            transition: 'background-color 0.2s',
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(29, 185, 84, 0.05)'
+                                            }
+                                        }}
+                                    >
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                {product.category}
+                                                <Tooltip title={`Total de itens vendidos: ${product.unitsSold}`} arrow>
+                                                    <IconButton size="small">
+                                                        <InfoIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell align="right">{product.unitsSold}</TableCell>
+                                        <TableCell align="right">{formatCurrency(product.revenue)}</TableCell>
+                                        <TableCell align="right">{formatCurrency(product.averagePrice)}</TableCell>
+                                        <TableCell align="right">{product.profitMargin}%</TableCell>
+                                        <TableCell align="right">
+                                            <Chip
+                                                label={
+                                                    product.profitMargin >= 25 ? 'Excelente' : 
+                                                    product.profitMargin >= 20 ? 'Bom' :
+                                                    product.profitMargin >= 15 ? 'Regular' : 'Baixo'
+                                                }
+                                                color={
+                                                    product.profitMargin >= 25 ? 'success' :
+                                                    product.profitMargin >= 20 ? 'primary' :
+                                                    product.profitMargin >= 15 ? 'warning' : 'error'
+                                                }
+                                                size="small"
+                                                sx={{
+                                                    fontWeight: 'bold',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                }}
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Paper>
 
                 {/* Detalhamento dos Custos Operacionais */}
                 <Paper sx={{ 
@@ -255,11 +411,11 @@ export default function Financial() {
                             content: '""',
                             width: 4,
                             height: 24,
-                            backgroundColor: '#1DB954',
+                            backgroundColor: '#2E7D32',
                             borderRadius: 2
                         }
                     }}>
-                        Detalhamento dos Custos Operacionais
+                        💼 Detalhamento dos Custos Operacionais
                     </Typography>
                     <TableContainer>
                         <Table>
@@ -275,6 +431,13 @@ export default function Financial() {
                                 {Object.entries(mockFinancialData.operationalCosts).map(([key, value]) => {
                                     if (key === 'total') return null;
                                     const percentage = (value / mockFinancialData.operationalCosts.total) * 100;
+                                    const categoryLabels: Record<string, string> = {
+                                        labor: 'Mão de obra',
+                                        components: 'Componentes',
+                                        logistics: 'Logística',
+                                        utilities: 'Utilidades',
+                                        maintenance: 'Manutenção'
+                                    };
                                     return (
                                         <TableRow 
                                             key={key}
@@ -288,7 +451,7 @@ export default function Financial() {
                                         >
                                             <TableCell>
                                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                                                    {categoryLabels[key] || key.charAt(0).toUpperCase() + key.slice(1)}
                                                     <Tooltip title="Detalhes sobre este custo" arrow>
                                                         <IconButton size="small">
                                                             <InfoIcon fontSize="small" />
@@ -300,8 +463,8 @@ export default function Financial() {
                                             <TableCell align="right">{percentage.toFixed(1)}%</TableCell>
                                             <TableCell align="right">
                                                 <Chip
-                                                    label={percentage > 30 ? 'Alto' : percentage > 15 ? 'Médio' : 'Baixo'}
-                                                    color={percentage > 30 ? 'error' : percentage > 15 ? 'warning' : 'success'}
+                                                    label={percentage > 50 ? 'Alto' : percentage > 20 ? 'Médio' : 'Baixo'}
+                                                    color={percentage > 50 ? 'error' : percentage > 20 ? 'warning' : 'success'}
                                                     size="small"
                                                     sx={{
                                                         fontWeight: 'bold',
@@ -315,72 +478,6 @@ export default function Financial() {
                             </TableBody>
                         </Table>
                     </TableContainer>
-                </Paper>
-
-                {/* Indicadores de Produção */}
-                <Paper sx={{ 
-                    p: 3,
-                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
-                }}>
-                    <Typography variant="h6" sx={{ 
-                        mb: 3,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        '&::before': {
-                            content: '""',
-                            width: 4,
-                            height: 24,
-                            backgroundColor: '#1DB954',
-                            borderRadius: 2
-                        }
-                    }}>
-                        Indicadores de Produção
-                    </Typography>
-                    <Box sx={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, 
-                        gap: 3 
-                    }}>
-                        {[
-                            {
-                                title: 'Unidades Produzidas',
-                                value: mockFinancialData.revenue.unitsProduced,
-                                format: (v: number) => v.toString()
-                            },
-                            {
-                                title: 'Preço Médio por Unidade',
-                                value: mockFinancialData.revenue.averageUnitPrice,
-                                format: formatCurrency
-                            },
-                            {
-                                title: 'Receita Total',
-                                value: mockFinancialData.revenue.totalSales,
-                                format: formatCurrency
-                            }
-                        ].map((indicator, index) => (
-                            <Zoom in={true} style={{ transitionDelay: `${index * 150}ms` }} key={indicator.title}>
-                                <Card sx={{
-                                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-                                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                                    '&:hover': {
-                                        transform: 'translateY(-5px)',
-                                        boxShadow: '0 12px 20px rgba(0,0,0,0.15)'
-                                    }
-                                }}>
-                                    <CardContent>
-                                        <Typography color="textSecondary" gutterBottom>
-                                            {indicator.title}
-                                        </Typography>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1DB954' }}>
-                                            {indicator.format(indicator.value)}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Zoom>
-                        ))}
-                    </Box>
                 </Paper>
 
                 <style>{`

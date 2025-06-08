@@ -182,7 +182,7 @@ const Employee = () => {
                       Controle de Tempo
                     </Typography>
                     <Box sx={{ mt: 2 }}>
-                      <TimerComponent estimatedTime={30} />
+                      <TimerComponent showControls={true} />
                     </Box>
                   </CardContent>
                 </Card>

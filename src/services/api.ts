@@ -9,21 +9,28 @@ const api = axios.create({
     }
 });
 
+// Interface para os dados de vendas de produtos
+export interface ProductSaleData {
+    category: string;
+    unitsSold: number;
+    revenue: number;
+    averagePrice: number;
+    profitMargin: number;
+}
+
 // Interface para os dados financeiros
 export interface FinancialData {
     operationalCosts: {
         labor: number;
-        materials: number;
-        equipment: number;
+        components: number;
+        logistics: number;
         utilities: number;
         maintenance: number;
         total: number;
     };
-    revenue: {
-        totalSales: number;
-        averageUnitPrice: number;
-        unitsProduced: number;
-    };
+    productSales: ProductSaleData[];
+    totalRevenue: number;
+    totalCosts: number;
     grossProfit: number;
     netProfit: number;
     profitMargin: number;

@@ -7,8 +7,8 @@ import BuildIcon from '@mui/icons-material/Build';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import InventoryIcon from '@mui/icons-material/Inventory';
-import EventNoteIcon from '@mui/icons-material/EventNote';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import PersonIcon from '@mui/icons-material/Person';
 import { useAuth } from '../../contexts/AuthContext';
 
 const AdminHome = () => {
@@ -18,17 +18,12 @@ const AdminHome = () => {
   const navigationCards = [
     // Grupo de Produção
     {
-      title: 'Produção',
-      description: 'Gerencie ordens de produção e acompanhe o status',
+      title: 'Pedidos',
+      description: 'Gerencie pedidos de CPUs e acompanhe o status',
       icon: <FactoryIcon sx={{ fontSize: 40, color: '#1DB954' }} />,
-      path: '/admin'
-    },
-    {
-      title: 'Planejamento',
-      description: 'Planeje e organize a produção',
-      icon: <EventNoteIcon sx={{ fontSize: 40, color: '#1DB954' }} />,
       path: '/planning'
     },
+
     {
       title: 'Equipes',
       description: 'Visualize e gerencie as equipes de trabalho',
@@ -106,7 +101,7 @@ const AdminHome = () => {
           {/* Grid de cards de navegação */}
           <Grid container spacing={3}>
             {navigationCards.map((card, index) => (
-              <Grid item xs={12} sm={6} md={4} key={card.title}>
+              <Grid item xs={12} sm={6} md={4} key={card.title || `card-${index}`}>
                 <Zoom in={true} style={{ transitionDelay: `${index * 100}ms` }}>
                   <Card
                     onClick={() => navigate(card.path)}

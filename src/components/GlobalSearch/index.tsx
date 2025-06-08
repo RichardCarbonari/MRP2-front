@@ -29,7 +29,7 @@ interface SearchResult {
 // Mock data - substituir por dados reais posteriormente
 const mockResults: SearchResult[] = [
     { id: 1, type: 'team', title: 'Equipe A', description: 'Produção', route: '/team/1' },
-    { id: 2, type: 'order', title: 'Ordem #123', description: 'Em andamento', route: '/admin' },
+    { id: 2, type: 'order', title: 'Ordem #123', description: 'Em andamento', route: '/planning' },
     { id: 3, type: 'task', title: 'Montagem XYZ', description: 'Equipe A', route: '/team/1' },
 ];
 

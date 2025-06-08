@@ -5,19 +5,12 @@ import {
     Typography,
     Grid,
     Paper,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    ListItemSecondaryAction,
-    Switch,
-    Button,
     TextField,
-    Divider,
+    Switch,
+    FormControlLabel,
     Alert,
 } from '@mui/material';
-import BackupIcon from '@mui/icons-material/Backup';
-import SaveIcon from '@mui/icons-material/Save';
+import CloudIcon from '@mui/icons-material/Cloud';
 
 interface Settings {
     production: {
@@ -44,7 +37,6 @@ export default function AdminSettings() {
         },
     });
 
-    const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     const handleProductionChange = (key: keyof Settings['production'], value: number) => {
@@ -55,6 +47,9 @@ export default function AdminSettings() {
                 [key]: value,
             },
         }));
+        // Auto-save simulation
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
     };
 
     const handleSystemChange = (key: keyof Settings['system'], value: any) => {
@@ -65,126 +60,335 @@ export default function AdminSettings() {
                 [key]: value,
             },
         }));
-    };
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        // Simular salvamento
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Auto-save simulation
         setSaveSuccess(true);
-        setIsSaving(false);
-        setTimeout(() => setSaveSuccess(false), 3000);
+        setTimeout(() => setSaveSuccess(false), 2000);
     };
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Paper sx={{ p: 2, backgroundColor: '#1DB954', color: 'white', mb: 3 }}>
-                <Typography variant="h4" gutterBottom>
-                    Configurações do Sistema
-                </Typography>
-            </Paper>
+        <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh', py: 0 }}>
+            {/* Header Verde */}
+            <Box 
+                sx={{ 
+                    background: 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%)',
+                    color: 'white',
+                    p: 4,
+                    borderRadius: '0 0 20px 20px',
+                    mb: 4,
+                    boxShadow: '0 4px 20px rgba(46, 125, 50, 0.3)'
+                }}
+            >
+                <Container maxWidth="lg">
+                    <Typography 
+                        variant="h4" 
+                        sx={{ 
+                            fontWeight: '600',
+                            fontSize: '2rem',
+                            letterSpacing: '0.5px'
+                        }}
+                    >
+                        Configurações do Sistema
+                    </Typography>
+                </Container>
+            </Box>
 
-            {saveSuccess && (
-                <Alert severity="success" sx={{ mb: 3 }}>
-                    Configurações salvas com sucesso!
-                </Alert>
-            )}
+            <Container maxWidth="lg">
+                {saveSuccess && (
+                    <Alert 
+                        severity="success" 
+                        sx={{ 
+                            mb: 3,
+                            borderRadius: '12px',
+                            '& .MuiAlert-icon': {
+                                color: '#2E7D32'
+                            }
+                        }}
+                    >
+                        Configurações salvas automaticamente!
+                    </Alert>
+                )}
 
-            <Grid container spacing={3}>
-                {/* Parâmetros de Produção */}
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 2 }}>
-                        <Typography variant="h6" gutterBottom sx={{ color: '#1DB954' }}>
-                            Parâmetros de Produção
-                        </Typography>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Duração Padrão do Turno (horas)"
-                                    type="number"
-                                    value={settings.production.defaultShiftDuration}
-                                    onChange={(e) => handleProductionChange('defaultShiftDuration', Number(e.target.value))}
-                                    InputProps={{ inputProps: { min: 1, max: 24 } }}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Limite de Qualidade (%)"
-                                    type="number"
-                                    value={settings.production.qualityThreshold}
-                                    onChange={(e) => handleProductionChange('qualityThreshold', Number(e.target.value))}
-                                    InputProps={{ inputProps: { min: 0, max: 100 } }}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Intervalo de Manutenção (dias)"
-                                    type="number"
-                                    value={settings.production.maintenanceInterval}
-                                    onChange={(e) => handleProductionChange('maintenanceInterval', Number(e.target.value))}
-                                    InputProps={{ inputProps: { min: 1 } }}
-                                />
-                            </Grid>
-                        </Grid>
-                    </Paper>
-                </Grid>
-
-                {/* Sistema */}
-                <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 2 }}>
-                        <Typography variant="h6" gutterBottom sx={{ color: '#1DB954' }}>
-                            Backup do Sistema
-                        </Typography>
-                        <List>
-                            <ListItem>
-                                <ListItemIcon>
-                                    <BackupIcon />
-                                </ListItemIcon>
-                                <ListItemText primary="Backup Automático" secondary="Realizar backup automático dos dados" />
-                                <ListItemSecondaryAction>
-                                    <Switch
-                                        edge="end"
-                                        checked={settings.system.autoBackup}
-                                        onChange={() => handleSystemChange('autoBackup', !settings.system.autoBackup)}
-                                    />
-                                </ListItemSecondaryAction>
-                            </ListItem>
-                            {settings.system.autoBackup && (
-                                <ListItem>
+                <Grid container spacing={4}>
+                    {/* Parâmetros de Produção */}
+                    <Grid item xs={12} md={6}>
+                        <Paper 
+                            sx={{ 
+                                p: 4,
+                                borderRadius: '16px',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                                border: '1px solid #e1e4e8',
+                                height: 'fit-content'
+                            }}
+                        >
+                            <Typography 
+                                variant="h5" 
+                                gutterBottom 
+                                sx={{ 
+                                    color: '#2E7D32',
+                                    fontWeight: '600',
+                                    mb: 3,
+                                    fontSize: '1.4rem'
+                                }}
+                            >
+                                Parâmetros de Produção
+                            </Typography>
+                            
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <Box>
+                                    <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                            color: '#666666',
+                                            mb: 1,
+                                            fontSize: '0.9rem',
+                                            fontWeight: '500'
+                                        }}
+                                    >
+                                        Duração Padrão do Turno (horas)
+                                    </Typography>
                                     <TextField
                                         fullWidth
-                                        label="Intervalo de Backup (horas)"
                                         type="number"
-                                        value={settings.system.backupInterval}
-                                        onChange={(e) => handleSystemChange('backupInterval', Number(e.target.value))}
-                                        InputProps={{ inputProps: { min: 1 } }}
+                                        value={settings.production.defaultShiftDuration}
+                                        onChange={(e) => handleProductionChange('defaultShiftDuration', Number(e.target.value))}
+                                        InputProps={{ 
+                                            inputProps: { min: 1, max: 24 },
+                                            sx: {
+                                                borderRadius: '8px',
+                                                backgroundColor: '#fafafa',
+                                                '& input': {
+                                                    fontSize: '1.1rem',
+                                                    fontWeight: '500'
+                                                }
+                                            }
+                                        }}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                '& fieldset': {
+                                                    borderColor: '#e1e4e8',
+                                                },
+                                                '&:hover fieldset': {
+                                                    borderColor: '#2E7D32',
+                                                },
+                                                '&.Mui-focused fieldset': {
+                                                    borderColor: '#2E7D32',
+                                                    borderWidth: '2px'
+                                                },
+                                            },
+                                        }}
                                     />
-                                </ListItem>
-                            )}
-                        </List>
-                    </Paper>
-                </Grid>
-            </Grid>
+                                </Box>
 
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                    variant="contained"
-                    startIcon={<SaveIcon />}
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    sx={{
-                        backgroundColor: '#1DB954',
-                        '&:hover': {
-                            backgroundColor: '#18a449',
-                        },
-                    }}
-                >
-                    {isSaving ? 'Salvando...' : 'Salvar Configurações'}
-                </Button>
-            </Box>
-        </Container>
+                                <Box>
+                                    <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                            color: '#666666',
+                                            mb: 1,
+                                            fontSize: '0.9rem',
+                                            fontWeight: '500'
+                                        }}
+                                    >
+                                        Limite de Qualidade (%)
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        type="number"
+                                        value={settings.production.qualityThreshold}
+                                        onChange={(e) => handleProductionChange('qualityThreshold', Number(e.target.value))}
+                                        InputProps={{ 
+                                            inputProps: { min: 0, max: 100 },
+                                            sx: {
+                                                borderRadius: '8px',
+                                                backgroundColor: '#fafafa',
+                                                '& input': {
+                                                    fontSize: '1.1rem',
+                                                    fontWeight: '500'
+                                                }
+                                            }
+                                        }}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                '& fieldset': {
+                                                    borderColor: '#e1e4e8',
+                                                },
+                                                '&:hover fieldset': {
+                                                    borderColor: '#2E7D32',
+                                                },
+                                                '&.Mui-focused fieldset': {
+                                                    borderColor: '#2E7D32',
+                                                    borderWidth: '2px'
+                                                },
+                                            },
+                                        }}
+                                    />
+                                </Box>
+
+                                <Box>
+                                    <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                            color: '#666666',
+                                            mb: 1,
+                                            fontSize: '0.9rem',
+                                            fontWeight: '500'
+                                        }}
+                                    >
+                                        Intervalo de Manutenção (dias)
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        type="number"
+                                        value={settings.production.maintenanceInterval}
+                                        onChange={(e) => handleProductionChange('maintenanceInterval', Number(e.target.value))}
+                                        InputProps={{ 
+                                            inputProps: { min: 1 },
+                                            sx: {
+                                                borderRadius: '8px',
+                                                backgroundColor: '#fafafa',
+                                                '& input': {
+                                                    fontSize: '1.1rem',
+                                                    fontWeight: '500'
+                                                }
+                                            }
+                                        }}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                '& fieldset': {
+                                                    borderColor: '#e1e4e8',
+                                                },
+                                                '&:hover fieldset': {
+                                                    borderColor: '#2E7D32',
+                                                },
+                                                '&.Mui-focused fieldset': {
+                                                    borderColor: '#2E7D32',
+                                                    borderWidth: '2px'
+                                                },
+                                            },
+                                        }}
+                                    />
+                                </Box>
+                            </Box>
+                        </Paper>
+                    </Grid>
+
+                    {/* Backup do Sistema */}
+                    <Grid item xs={12} md={6}>
+                        <Paper 
+                            sx={{ 
+                                p: 4,
+                                borderRadius: '16px',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                                border: '1px solid #e1e4e8',
+                                height: 'fit-content'
+                            }}
+                        >
+                            <Typography 
+                                variant="h5" 
+                                gutterBottom 
+                                sx={{ 
+                                    color: '#2E7D32',
+                                    fontWeight: '600',
+                                    mb: 3,
+                                    fontSize: '1.4rem'
+                                }}
+                            >
+                                Backup do Sistema
+                            </Typography>
+                            
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <CloudIcon sx={{ color: '#666666', fontSize: '1.5rem' }} />
+                                    <Box sx={{ flexGrow: 1 }}>
+                                        <Typography 
+                                            variant="body1" 
+                                            sx={{ 
+                                                fontWeight: '600',
+                                                fontSize: '1rem',
+                                                color: '#333333',
+                                                mb: 0.5
+                                            }}
+                                        >
+                                            Backup Automático
+                                        </Typography>
+                                        <Typography 
+                                            variant="body2" 
+                                            sx={{ 
+                                                color: '#666666',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        >
+                                            Realizar backup automático dos dados
+                                        </Typography>
+                                    </Box>
+                                    <Switch
+                                        checked={settings.system.autoBackup}
+                                        onChange={() => handleSystemChange('autoBackup', !settings.system.autoBackup)}
+                                        sx={{
+                                            '& .MuiSwitch-switchBase.Mui-checked': {
+                                                color: '#2E7D32',
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(46, 125, 50, 0.08)',
+                                                },
+                                            },
+                                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                                backgroundColor: '#2E7D32',
+                                            },
+                                        }}
+                                    />
+                                </Box>
+
+                                {settings.system.autoBackup && (
+                                    <Box>
+                                        <Typography 
+                                            variant="body2" 
+                                            sx={{ 
+                                                color: '#666666',
+                                                mb: 1,
+                                                fontSize: '0.9rem',
+                                                fontWeight: '500'
+                                            }}
+                                        >
+                                            Intervalo de Backup (horas)
+                                        </Typography>
+                                        <TextField
+                                            fullWidth
+                                            type="number"
+                                            value={settings.system.backupInterval}
+                                            onChange={(e) => handleSystemChange('backupInterval', Number(e.target.value))}
+                                            InputProps={{ 
+                                                inputProps: { min: 1 },
+                                                sx: {
+                                                    borderRadius: '8px',
+                                                    backgroundColor: '#fafafa',
+                                                    '& input': {
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: '500'
+                                                    }
+                                                }
+                                            }}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    '& fieldset': {
+                                                        borderColor: '#e1e4e8',
+                                                    },
+                                                    '&:hover fieldset': {
+                                                        borderColor: '#2E7D32',
+                                                    },
+                                                    '&.Mui-focused fieldset': {
+                                                        borderColor: '#2E7D32',
+                                                        borderWidth: '2px'
+                                                    },
+                                                },
+                                            }}
+                                        />
+                                    </Box>
+                                )}
+                            </Box>
+                        </Paper>
+                    </Grid>
+                </Grid>
+            </Container>
+        </Box>
     );
 } 

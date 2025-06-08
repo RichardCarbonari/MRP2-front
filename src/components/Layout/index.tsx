@@ -1,7 +1,9 @@
 import React from 'react';
-import { Box } from '@mui/material';
-import Header from '../Header';
-import Footer from '../Footer';
+import { useAuth } from '../../contexts/AuthContext';
+import AdminLayout from './AdminLayout';
+import EmployeeLayout from './EmployeeLayout';
+import MaintenanceLayout from './MaintenanceLayout';
+import LoginLayout from './LoginLayout';
 
 /**
  * Interface que define as propriedades do componente Layout
@@ -13,36 +15,31 @@ interface LayoutProps {
 }
 
 /**
- * Componente que define o layout padrão da aplicação
- * Inclui a barra de navegação superior com links para as principais seções
+ * Componente que define o layout baseado no tipo de usuário
+ * Seleciona automaticamente o layout apropriado baseado no tipo de usuário logado
  * @component
  * @param {LayoutProps} props - Propriedades do componente
  * @param {React.ReactNode} props.children - Conteúdo a ser renderizado dentro do layout
  */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-    return (
-        <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            minHeight: '100vh',
-            backgroundColor: '#f8f9fa'
-        }}>
-            <Header />
-            <Box 
-                component="main" 
-                sx={{ 
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    pt: 3,
-                    px: 2
-                }}
-            >
-                {children}
-            </Box>
-            <Footer />
-        </Box>
-    );
+    const { user, isAuthenticated } = useAuth();
+
+    // Se não está autenticado, usa o layout de login
+    if (!isAuthenticated || !user) {
+        return <LoginLayout>{children}</LoginLayout>;
+    }
+
+    // Seleciona o layout baseado no tipo de usuário
+    switch (user.role) {
+        case 'admin':
+            return <AdminLayout>{children}</AdminLayout>;
+        case 'employee':
+            return <EmployeeLayout>{children}</EmployeeLayout>;
+        case 'maintenance':
+            return <MaintenanceLayout>{children}</MaintenanceLayout>;
+        default:
+            return <LoginLayout>{children}</LoginLayout>;
+    }
 };
 
 export default Layout; 

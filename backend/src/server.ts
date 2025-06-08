@@ -5,7 +5,7 @@ import maintenanceRoutes from './routes/maintenance';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 
-dotenv.config();
+dotenv.config({ path: './dataBase.env' });
 
 const app = express();
 
@@ -46,7 +46,7 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ message: 'Rota não encontrada' });
 });
 
-const PORT = 3006;
+const PORT = process.env.PORT || 3006;
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

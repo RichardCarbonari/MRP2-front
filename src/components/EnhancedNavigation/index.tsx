@@ -83,8 +83,7 @@ export default function EnhancedNavigation() {
             title: 'Produção',
             icon: <FactoryIcon />,
             items: [
-                { text: 'Produção', icon: <FactoryIcon />, path: '/admin' },
-                { text: 'Planejamento', icon: <EventNoteIcon />, path: '/planning' },
+                { text: 'Pedidos', icon: <FactoryIcon />, path: '/planning' },
                 { text: 'Equipes', icon: <GroupsIcon />, path: '/teams-management' },
             ]
         },

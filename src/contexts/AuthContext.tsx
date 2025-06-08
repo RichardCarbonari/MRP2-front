@@ -83,11 +83,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     switch (user.role) {
       case 'admin':
-        return '/admin/dashboard';
+        return '/admin-home';
       case 'maintenance':
-        return '/maintenance/dashboard';
+        return '/maintenance-home';
       case 'employee':
-        return '/employee/dashboard';
+        return '/employee-home';
       default:
         return '/login';
     }
