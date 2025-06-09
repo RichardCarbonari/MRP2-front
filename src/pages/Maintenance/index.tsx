@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -27,6 +27,10 @@ import {
     CardContent,
     Fade,
     Zoom,
+    CircularProgress,
+    Alert,
+    Skeleton,
+    LinearProgress,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -46,54 +50,51 @@ interface Equipment {
     name: string;
     type: string;
     status: 'operational' | 'maintenance' | 'broken';
-    lastMaintenance: Date;
-    nextMaintenance: Date;
+    lastMaintenance: Date | string;
+    nextMaintenance: Date | string;
+    location?: string;
+    serialNumber?: string;
+    manufacturer?: string;
+    model?: string;
 }
 
 interface MaintenanceRecord {
     id: number;
     equipmentId: number;
+    equipmentName?: string;
     type: 'preventive' | 'corrective';
     description: string;
-    date: Date;
+    date: Date | string;
     technician: string;
     cost: number;
     status: 'scheduled' | 'in_progress' | 'completed';
+    priority?: 'low' | 'medium' | 'high';
+    estimatedDuration?: number;
+    notes?: string;
+    completedAt?: Date | string;
+}
+
+interface MaintenanceMetrics {
+    totalEquipment: number;
+    operationalEquipment: number;
+    maintenanceEquipment: number;
+    brokenEquipment: number;
+    totalMaintenanceRecords: number;
+    scheduledMaintenance: number;
+    inProgressMaintenance: number;
+    completedMaintenance: number;
+    totalMaintenanceCosts: number;
+    averageMaintenanceCost: number;
+    equipmentUptime: number;
 }
 
 export default function Maintenance() {
-    const [isLoading, setIsLoading] = useState(false);
-    const [equipment, setEquipment] = useState<Equipment[]>([
-        {
-            id: 1,
-            name: 'Torno CNC',
-            type: 'Máquina de Usinagem',
-            status: 'operational',
-            lastMaintenance: new Date('2024-02-15'),
-            nextMaintenance: new Date('2024-04-15'),
-        },
-        {
-            id: 2,
-            name: 'Fresadora',
-            type: 'Máquina de Usinagem',
-            status: 'maintenance',
-            lastMaintenance: new Date('2024-03-01'),
-            nextMaintenance: new Date('2024-03-15'),
-        },
-    ]);
-
-    const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([
-        {
-            id: 1,
-            equipmentId: 2,
-            type: 'preventive',
-            description: 'Manutenção preventiva mensal',
-            date: new Date('2024-03-15'),
-            technician: 'João Silva',
-            cost: 500,
-            status: 'scheduled',
-        },
-    ]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [equipment, setEquipment] = useState<Equipment[]>([]);
+    const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
+    const [metrics, setMetrics] = useState<MaintenanceMetrics | null>(null);
 
     const [isEquipmentDialogOpen, setIsEquipmentDialogOpen] = useState(false);
     const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
@@ -142,6 +143,10 @@ export default function Maintenance() {
         }
     };
 
+    const formatDate = (date: Date | string) => {
+        return new Date(date).toLocaleDateString('pt-BR');
+    };
+
     const handleAddEquipment = () => {
         setSelectedEquipment(null);
         setIsEquipmentDialogOpen(true);
@@ -162,10 +167,55 @@ export default function Maintenance() {
         setIsMaintenanceDialogOpen(true);
     };
 
-    const handleRefresh = () => {
-        setIsLoading(true);
-        // Simular carregamento
-        setTimeout(() => setIsLoading(false), 1000);
+    // Carregar dados de manutenção do backend
+    const loadMaintenanceData = async () => {
+        try {
+            setError(null);
+            
+            // Carregar equipamentos, registros e métricas em paralelo
+            const [equipmentResponse, recordsResponse, metricsResponse] = await Promise.all([
+                fetch('/api/maintenance/equipment'),
+                fetch('/api/maintenance/records'),
+                fetch('/api/maintenance/metrics')
+            ]);
+
+            if (!equipmentResponse.ok || !recordsResponse.ok || !metricsResponse.ok) {
+                throw new Error('Erro ao carregar dados de manutenção');
+            }
+
+            const equipmentData = await equipmentResponse.json();
+            const recordsData = await recordsResponse.json();
+            const metricsData = await metricsResponse.json();
+
+            if (equipmentData.success) {
+                setEquipment(equipmentData.data);
+            }
+
+            if (recordsData.success) {
+                setMaintenanceRecords(recordsData.data);
+            }
+
+            if (metricsData.success) {
+                setMetrics(metricsData.data);
+            }
+
+        } catch (error) {
+            console.error('Erro ao carregar dados:', error);
+            setError('Erro ao conectar com o servidor. Verifique se o backend está rodando.');
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    // Carregar dados iniciais
+    useEffect(() => {
+        loadMaintenanceData();
+    }, []);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await loadMaintenanceData();
     };
 
     const handleDeleteEquipment = (id: number) => {
@@ -246,7 +296,7 @@ export default function Maintenance() {
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <Button
                                 variant="outlined"
-                                startIcon={<RefreshIcon className={isLoading ? 'rotating' : ''} />}
+                                startIcon={<RefreshIcon className={refreshing ? 'rotating' : ''} />}
                                 onClick={handleRefresh}
                                 sx={{ 
                                     borderColor: '#1DB954',
@@ -402,10 +452,10 @@ export default function Maintenance() {
                                                 />
                                             </TableCell>
                                             <TableCell>
-                                                {item.lastMaintenance.toLocaleDateString('pt-BR')}
+                                                {formatDate(item.lastMaintenance)}
                                             </TableCell>
                                             <TableCell>
-                                                {item.nextMaintenance.toLocaleDateString('pt-BR')}
+                                                {formatDate(item.nextMaintenance)}
                                             </TableCell>
                                             <TableCell align="right">
                                                 <IconButton 
@@ -507,7 +557,7 @@ export default function Maintenance() {
                                                 />
                                             </TableCell>
                                             <TableCell>{record.description}</TableCell>
-                                            <TableCell>{record.date.toLocaleDateString('pt-BR')}</TableCell>
+                                            <TableCell>{formatDate(record.date)}</TableCell>
                                             <TableCell>{record.technician}</TableCell>
                                             <TableCell align="right">
                                                 {record.cost.toLocaleString('pt-BR', {

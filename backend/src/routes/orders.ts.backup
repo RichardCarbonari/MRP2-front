@@ -1,0 +1,483 @@
+import { Router } from 'express';
+
+const router = Router();
+
+// Tipos de CPU disponíveis
+const cpuTypes = {
+    'gaming-basic': {
+        name: 'Gaming Básico',
+        price: 2500,
+        specs: {
+            processor: 'Intel Core i5-13400F',
+            motherboard: 'ASUS TUF B660M-PLUS WiFi D4',
+            ram: 'Corsair Vengeance LPX 16GB DDR4',
+            storage: 'Kingston NV2 1TB NVMe',
+            gpu: 'NVIDIA GeForce RTX 3060 12GB',
+            powerSupply: 'Corsair CV550 550W 80 Plus Bronze',
+            case: 'Cooler Master Q300L'
+        }
+    },
+    'gaming-advanced': {
+        name: 'Gaming Avançado',
+        price: 4200,
+        specs: {
+            processor: 'Intel Core i7-13700F',
+            motherboard: 'ASUS ROG STRIX B660-F GAMING WiFi',
+            ram: 'Corsair Vengeance LPX 32GB DDR4',
+            storage: 'Samsung 980 PRO 2TB NVMe',
+            gpu: 'NVIDIA GeForce RTX 4070 Ti',
+            powerSupply: 'Corsair RM750x 750W 80 Plus Gold',
+            case: 'NZXT H5 Flow'
+        }
+    },
+    'workstation': {
+        name: 'Workstation',
+        price: 3800,
+        specs: {
+            processor: 'Intel Core i7-13700',
+            motherboard: 'ASUS ProArt B660-CREATOR D4',
+            ram: 'Corsair Vengeance LPX 64GB DDR4',
+            storage: 'Samsung 980 PRO 1TB NVMe',
+            gpu: 'NVIDIA RTX A4000',
+            powerSupply: 'Corsair RM850x 850W 80 Plus Gold',
+            case: 'Fractal Design Define 7'
+        }
+    },
+    'office': {
+        name: 'Office/Corporativo',
+        price: 1800,
+        specs: {
+            processor: 'Intel Core i5-13400',
+            motherboard: 'ASUS PRIME B660M-A D4',
+            ram: 'Corsair Vengeance LPX 16GB DDR4',
+            storage: 'Kingston NV2 512GB NVMe',
+            powerSupply: 'Corsair CV450 450W 80 Plus Bronze',
+            case: 'Cooler Master MasterBox Q300L'
+        }
+    },
+    'budget': {
+        name: 'Entrada/Budget',
+        price: 1200,
+        specs: {
+            processor: 'Intel Core i3-13100',
+            motherboard: 'ASUS PRIME H610M-E D4',
+            ram: 'Kingston FURY Beast 8GB DDR4',
+            storage: 'Kingston NV2 256GB NVMe',
+            powerSupply: 'Corsair CV350 350W',
+            case: 'Cooler Master MasterBox Q300L'
+        }
+    }
+};
+
+// Mock database for orders
+let orders = [
+    {
+        id: 'PED001',
+        customerName: 'João Silva',
+        customerEmail: 'joao.silva@email.com',
+        customerPhone: '(11) 99999-9999',
+        cpuType: 'gaming-basic',
+        cpuSpecs: cpuTypes['gaming-basic'].specs,
+        quantity: 2,
+        unitPrice: cpuTypes['gaming-basic'].price,
+        totalPrice: cpuTypes['gaming-basic'].price * 2,
+        orderDate: '2024-12-20T10:00:00.000Z',
+        deliveryDate: '2024-12-27T10:00:00.000Z',
+        status: 'assembly',
+        priority: 'high',
+        notes: 'Cliente solicitou montagem expressa',
+        createdAt: '2024-12-20T10:00:00.000Z',
+        updatedAt: '2024-12-20T10:00:00.000Z'
+    },
+    {
+        id: 'PED002',
+        customerName: 'Maria Santos',
+        customerEmail: 'maria.santos@empresa.com',
+        customerPhone: '(11) 88888-8888',
+        cpuType: 'workstation',
+        cpuSpecs: cpuTypes['workstation'].specs,
+        quantity: 1,
+        unitPrice: cpuTypes['workstation'].price,
+        totalPrice: cpuTypes['workstation'].price,
+        orderDate: '2024-12-21T09:00:00.000Z',
+        deliveryDate: '2024-12-30T09:00:00.000Z',
+        status: 'pending',
+        priority: 'medium',
+        notes: 'Para uso em arquitetura e renderização',
+        createdAt: '2024-12-21T09:00:00.000Z',
+        updatedAt: '2024-12-21T09:00:00.000Z'
+    },
+    {
+        id: 'PED003',
+        customerName: 'Pedro Costa',
+        customerEmail: 'pedro.costa@email.com',
+        customerPhone: '(11) 77777-7777',
+        cpuType: 'gaming-advanced',
+        cpuSpecs: cpuTypes['gaming-advanced'].specs,
+        quantity: 1,
+        unitPrice: cpuTypes['gaming-advanced'].price,
+        totalPrice: cpuTypes['gaming-advanced'].price,
+        orderDate: '2024-12-19T15:00:00.000Z',
+        deliveryDate: '2024-12-26T15:00:00.000Z',
+        status: 'testing',
+        priority: 'high',
+        notes: 'Configuração personalizada com overclock',
+        createdAt: '2024-12-19T15:00:00.000Z',
+        updatedAt: '2024-12-19T15:00:00.000Z'
+    },
+    {
+        id: 'PED004',
+        customerName: 'Ana Carolina',
+        customerEmail: 'ana.carolina@tech.com.br',
+        customerPhone: '(11) 66666-6666',
+        cpuType: 'office',
+        cpuSpecs: cpuTypes['office'].specs,
+        quantity: 5,
+        unitPrice: cpuTypes['office'].price,
+        totalPrice: cpuTypes['office'].price * 5,
+        orderDate: '2024-12-22T08:30:00.000Z',
+        deliveryDate: '2025-01-05T08:30:00.000Z',
+        status: 'pending',
+        priority: 'low',
+        notes: 'Pedido corporativo para escritório - 5 estações de trabalho',
+        createdAt: '2024-12-22T08:30:00.000Z',
+        updatedAt: '2024-12-22T08:30:00.000Z'
+    },
+    {
+        id: 'PED005',
+        customerName: 'Ricardo Mendes',
+        customerEmail: 'ricardo.mendes@gamer.com',
+        customerPhone: '(11) 55555-5555',
+        cpuType: 'gaming-advanced',
+        cpuSpecs: cpuTypes['gaming-advanced'].specs,
+        quantity: 1,
+        unitPrice: cpuTypes['gaming-advanced'].price,
+        totalPrice: cpuTypes['gaming-advanced'].price,
+        orderDate: '2024-12-21T14:00:00.000Z',
+        deliveryDate: '2024-12-28T14:00:00.000Z',
+        status: 'ready',
+        priority: 'high',
+        notes: 'Setup para streaming profissional - RGB customizado',
+        createdAt: '2024-12-21T14:00:00.000Z',
+        updatedAt: '2024-12-22T16:30:00.000Z'
+    },
+    {
+        id: 'PED006',
+        customerName: 'Fernanda Oliveira',
+        customerEmail: 'fernanda.oliveira@estudante.com',
+        customerPhone: '(11) 44444-4444',
+        cpuType: 'budget',
+        cpuSpecs: cpuTypes['budget'].specs,
+        quantity: 2,
+        unitPrice: cpuTypes['budget'].price,
+        totalPrice: cpuTypes['budget'].price * 2,
+        orderDate: '2024-12-20T11:15:00.000Z',
+        deliveryDate: '2024-12-29T11:15:00.000Z',
+        status: 'assembly',
+        priority: 'medium',
+        notes: 'PCs para estudos universitários - orçamento limitado',
+        createdAt: '2024-12-20T11:15:00.000Z',
+        updatedAt: '2024-12-22T10:45:00.000Z'
+    },
+    {
+        id: 'PED007',
+        customerName: 'Lucas Technologies LTDA',
+        customerEmail: 'compras@lucastech.com.br',
+        customerPhone: '(11) 33333-3333',
+        cpuType: 'workstation',
+        cpuSpecs: cpuTypes['workstation'].specs,
+        quantity: 3,
+        unitPrice: cpuTypes['workstation'].price,
+        totalPrice: cpuTypes['workstation'].price * 3,
+        orderDate: '2024-12-18T16:45:00.000Z',
+        deliveryDate: '2025-01-02T16:45:00.000Z',
+        status: 'delivered',
+        priority: 'medium',
+        notes: 'Estações para equipe de design gráfico - entrega realizada',
+        createdAt: '2024-12-18T16:45:00.000Z',
+        updatedAt: '2024-12-24T09:00:00.000Z'
+    }
+];
+
+// Função para gerar ID único
+const generateOrderId = () => {
+    const lastOrder = orders.sort((a, b) => parseInt(b.id.slice(3)) - parseInt(a.id.slice(3)))[0];
+    const lastNumber = lastOrder ? parseInt(lastOrder.id.slice(3)) : 0;
+    return `PED${String(lastNumber + 1).padStart(3, '0')}`;
+};
+
+// GET /api/orders - Buscar todos os pedidos
+router.get('/', (req, res) => {
+    try {
+        const { status, priority, customer } = req.query;
+        
+        let filteredOrders = [...orders];
+        
+        // Filtrar por status
+        if (status && status !== 'all') {
+            filteredOrders = filteredOrders.filter(order => order.status === status);
+        }
+        
+        // Filtrar por prioridade
+        if (priority && priority !== 'all') {
+            filteredOrders = filteredOrders.filter(order => order.priority === priority);
+        }
+        
+        // Filtrar por nome do cliente
+        if (customer) {
+            filteredOrders = filteredOrders.filter(order => 
+                order.customerName.toLowerCase().includes(customer.toString().toLowerCase())
+            );
+        }
+        
+        // Ordenar por data de criação (mais recentes primeiro)
+        filteredOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        res.json(filteredOrders);
+    } catch (error) {
+        console.error('Erro ao buscar pedidos:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// GET /api/orders/:id - Buscar pedido específico
+router.get('/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = orders.find(o => o.id === id);
+        
+        if (!order) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+        
+        res.json(order);
+    } catch (error) {
+        console.error('Erro ao buscar pedido:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// POST /api/orders - Criar novo pedido
+router.post('/', (req, res) => {
+    try {
+        const {
+            customerName,
+            customerEmail,
+            customerPhone,
+            cpuType,
+            quantity,
+            deliveryDate,
+            priority,
+            notes
+        } = req.body;
+        
+        // Validações
+        if (!customerName || !customerEmail || !customerPhone || !cpuType || !quantity || !deliveryDate) {
+            return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+        }
+        
+        if (!cpuTypes[cpuType as keyof typeof cpuTypes]) {
+            return res.status(400).json({ error: 'Tipo de CPU inválido' });
+        }
+        
+        if (quantity <= 0) {
+            return res.status(400).json({ error: 'Quantidade deve ser maior que zero' });
+        }
+        
+        // Verificar se a data de entrega é futura
+        const deliveryDateObj = new Date(deliveryDate);
+        if (deliveryDateObj <= new Date()) {
+            return res.status(400).json({ error: 'Data de entrega deve ser futura' });
+        }
+        
+        const selectedCpuType = cpuTypes[cpuType as keyof typeof cpuTypes];
+        const unitPrice = selectedCpuType.price;
+        const totalPrice = unitPrice * quantity;
+        
+        const newOrder = {
+            id: generateOrderId(),
+            customerName,
+            customerEmail,
+            customerPhone,
+            cpuType,
+            cpuSpecs: selectedCpuType.specs,
+            quantity,
+            unitPrice,
+            totalPrice,
+            orderDate: new Date().toISOString(),
+            deliveryDate: deliveryDateObj.toISOString(),
+            status: 'pending' as const,
+            priority: priority || 'medium',
+            notes: notes || '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        orders.push(newOrder);
+        
+        res.status(201).json(newOrder);
+    } catch (error) {
+        console.error('Erro ao criar pedido:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// PUT /api/orders/:id - Atualizar pedido
+router.put('/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const orderIndex = orders.findIndex(o => o.id === id);
+        
+        if (orderIndex === -1) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+        
+        const {
+            customerName,
+            customerEmail,
+            customerPhone,
+            cpuType,
+            quantity,
+            deliveryDate,
+            status,
+            priority,
+            notes
+        } = req.body;
+        
+        const currentOrder = orders[orderIndex];
+        
+        // Atualizar apenas campos fornecidos
+        if (customerName !== undefined) currentOrder.customerName = customerName;
+        if (customerEmail !== undefined) currentOrder.customerEmail = customerEmail;
+        if (customerPhone !== undefined) currentOrder.customerPhone = customerPhone;
+        if (deliveryDate !== undefined) {
+            const deliveryDateObj = new Date(deliveryDate);
+            if (deliveryDateObj <= new Date()) {
+                return res.status(400).json({ error: 'Data de entrega deve ser futura' });
+            }
+            currentOrder.deliveryDate = deliveryDateObj.toISOString();
+        }
+        if (status !== undefined) currentOrder.status = status;
+        if (priority !== undefined) currentOrder.priority = priority;
+        if (notes !== undefined) currentOrder.notes = notes;
+        
+        // Se mudou o tipo de CPU ou quantidade, recalcular preços
+        if (cpuType !== undefined || quantity !== undefined) {
+            const newCpuType = cpuType || currentOrder.cpuType;
+            const newQuantity = quantity || currentOrder.quantity;
+            
+            if (!cpuTypes[newCpuType as keyof typeof cpuTypes]) {
+                return res.status(400).json({ error: 'Tipo de CPU inválido' });
+            }
+            
+            if (newQuantity <= 0) {
+                return res.status(400).json({ error: 'Quantidade deve ser maior que zero' });
+            }
+            
+            const selectedCpuType = cpuTypes[newCpuType as keyof typeof cpuTypes];
+            currentOrder.cpuType = newCpuType;
+            currentOrder.cpuSpecs = selectedCpuType.specs;
+            currentOrder.quantity = newQuantity;
+            currentOrder.unitPrice = selectedCpuType.price;
+            currentOrder.totalPrice = selectedCpuType.price * newQuantity;
+        }
+        
+        currentOrder.updatedAt = new Date().toISOString();
+        
+        res.json(currentOrder);
+    } catch (error) {
+        console.error('Erro ao atualizar pedido:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// DELETE /api/orders/:id - Deletar pedido
+router.delete('/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const orderIndex = orders.findIndex(o => o.id === id);
+        
+        if (orderIndex === -1) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+        
+        // Não permitir deletar pedidos em produção ou entregues
+        const order = orders[orderIndex];
+        if (order.status === 'assembly' || order.status === 'testing' || order.status === 'delivered') {
+            return res.status(400).json({ 
+                error: 'Não é possível deletar pedidos em produção ou já entregues' 
+            });
+        }
+        
+        orders.splice(orderIndex, 1);
+        
+        res.status(204).send();
+    } catch (error) {
+        console.error('Erro ao deletar pedido:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// GET /api/orders/stats/summary - Estatísticas dos pedidos
+router.get('/stats/summary', (req, res) => {
+    try {
+        const totalOrders = orders.length;
+        const pendingOrders = orders.filter(o => o.status === 'pending').length;
+        const inProgressOrders = orders.filter(o => o.status === 'assembly' || o.status === 'testing').length;
+        const completedOrders = orders.filter(o => o.status === 'delivered').length;
+        const totalRevenue = orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + o.totalPrice, 0);
+        const averageOrderValue = totalOrders > 0 ? orders.reduce((sum, o) => sum + o.totalPrice, 0) / totalOrders : 0;
+        
+        // Pedidos por prioridade
+        const highPriority = orders.filter(o => o.priority === 'high').length;
+        const mediumPriority = orders.filter(o => o.priority === 'medium').length;
+        const lowPriority = orders.filter(o => o.priority === 'low').length;
+        
+        // Produtos mais vendidos
+        const productStats = Object.keys(cpuTypes).map(cpuType => {
+            const typeOrders = orders.filter(o => o.cpuType === cpuType);
+            const totalQuantity = typeOrders.reduce((sum, o) => sum + o.quantity, 0);
+            const totalValue = typeOrders.reduce((sum, o) => sum + o.totalPrice, 0);
+            
+            return {
+                cpuType,
+                name: cpuTypes[cpuType as keyof typeof cpuTypes].name,
+                orderCount: typeOrders.length,
+                totalQuantity,
+                totalValue
+            };
+        }).sort((a, b) => b.totalValue - a.totalValue);
+        
+        res.json({
+            summary: {
+                totalOrders,
+                pendingOrders,
+                inProgressOrders,
+                completedOrders,
+                totalRevenue,
+                averageOrderValue
+            },
+            priorities: {
+                high: highPriority,
+                medium: mediumPriority,
+                low: lowPriority
+            },
+            topProducts: productStats.slice(0, 5)
+        });
+    } catch (error) {
+        console.error('Erro ao buscar estatísticas:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// GET /api/orders/cpu-types - Buscar tipos de CPU disponíveis
+router.get('/cpu-types', (req, res) => {
+    try {
+        res.json(cpuTypes);
+    } catch (error) {
+        console.error('Erro ao buscar tipos de CPU:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+export default router; 

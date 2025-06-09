@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Paper,
@@ -12,9 +12,10 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Skeleton
 } from '@mui/material';
-import { Send as SendIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { Send as SendIcon, ArrowBack as ArrowBackIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { financialService } from '../../services/api';
 
@@ -38,19 +39,17 @@ interface FormData {
 }
 
 const productCategories = [
-    'Processador',
-    'Placa de Vídeo', 
-    'Placa-mãe',
-    'Memória RAM',
-    'SSD',
-    'Fonte',
-    'Periféricos',
-    'Software'
+    'Gaming Básico',
+    'Gaming Avançado', 
+    'Workstation',
+    'Office',
+    'Budget'
 ];
 
 export default function FinancialInput() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [loadingData, setLoadingData] = useState(true);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState<FormData>({
@@ -69,6 +68,73 @@ export default function FinancialInput() {
             profitMargin: ''
         }))
     });
+
+    // Carregar dados existentes do backend
+    useEffect(() => {
+        const loadFinancialData = async () => {
+            try {
+                setLoadingData(true);
+                const data = await financialService.getFinancialData();
+                
+                // Preencher formulário com dados existentes
+                setFormData({
+                    operationalCosts: {
+                        labor: data.operationalCosts.labor.toString(),
+                        components: data.operationalCosts.components.toString(),
+                        logistics: data.operationalCosts.logistics.toString(),
+                        utilities: data.operationalCosts.utilities.toString(),
+                        maintenance: data.operationalCosts.maintenance.toString()
+                    },
+                    productSales: data.productSales.map(sale => ({
+                        category: sale.category,
+                        unitsSold: sale.unitsSold.toString(),
+                        revenue: sale.revenue.toString(),
+                        averagePrice: sale.averagePrice.toString(),
+                        profitMargin: sale.profitMargin.toString()
+                    }))
+                });
+                
+                console.log('✅ Dados financeiros carregados:', data);
+            } catch (err) {
+                console.error('❌ Erro ao carregar dados financeiros:', err);
+                setError('Erro ao carregar dados existentes. Usando formulário vazio.');
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        loadFinancialData();
+    }, []);
+
+    const handleRefreshData = async () => {
+        setLoadingData(true);
+        setError(null);
+        try {
+            const data = await financialService.getFinancialData();
+            setFormData({
+                operationalCosts: {
+                    labor: data.operationalCosts.labor.toString(),
+                    components: data.operationalCosts.components.toString(),
+                    logistics: data.operationalCosts.logistics.toString(),
+                    utilities: data.operationalCosts.utilities.toString(),
+                    maintenance: data.operationalCosts.maintenance.toString()
+                },
+                productSales: data.productSales.map(sale => ({
+                    category: sale.category,
+                    unitsSold: sale.unitsSold.toString(),
+                    revenue: sale.revenue.toString(),
+                    averagePrice: sale.averagePrice.toString(),
+                    profitMargin: sale.profitMargin.toString()
+                }))
+            });
+            console.log('✅ Dados atualizados:', data);
+        } catch (err) {
+            console.error('❌ Erro ao atualizar dados:', err);
+            setError('Erro ao atualizar dados.');
+        } finally {
+            setLoadingData(false);
+        }
+    };
 
     const handleCostChange = (field: keyof typeof formData.operationalCosts) => (
         event: React.ChangeEvent<HTMLInputElement>
@@ -148,17 +214,35 @@ export default function FinancialInput() {
 
     return (
         <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Button
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => navigate('/financial')}
+                        sx={{ mr: 2, color: '#1DB954' }}
+                    >
+                        Voltar
+                    </Button>
+                    <Typography variant="h4" sx={{ color: '#1DB954', fontWeight: 'bold' }}>
+                        💰 Entrada de Dados Financeiros - Hardware
+                    </Typography>
+                </Box>
                 <Button
-                    startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate('/financial')}
-                    sx={{ mr: 2, color: '#1DB954' }}
+                    startIcon={loadingData ? <CircularProgress size={20} /> : <RefreshIcon />}
+                    onClick={handleRefreshData}
+                    disabled={loadingData}
+                    variant="outlined"
+                    sx={{ 
+                        borderColor: '#1DB954',
+                        color: '#1DB954',
+                        '&:hover': {
+                            borderColor: '#18a34b',
+                            backgroundColor: 'rgba(29, 185, 84, 0.04)'
+                        }
+                    }}
                 >
-                    Voltar
+                    {loadingData ? 'Carregando...' : 'Atualizar Dados'}
                 </Button>
-                <Typography variant="h4" sx={{ color: '#1DB954', fontWeight: 'bold' }}>
-                    💰 Entrada de Dados Financeiros - Hardware
-                </Typography>
             </Box>
 
             {success && (
@@ -179,21 +263,30 @@ export default function FinancialInput() {
                     <Typography variant="h6" sx={{ mb: 3, color: '#1DB954', fontWeight: 'bold' }}>
                         💼 Custos Operacionais
                     </Typography>
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
-                            <TextField
-                                fullWidth
-                                label="Mão de obra"
-                                type="number"
-                                value={formData.operationalCosts.labor}
-                                onChange={handleCostChange('labor')}
-                                required
-                                InputProps={{
-                                    startAdornment: 'R$ '
-                                }}
-                                helperText="Salários e encargos trabalhistas"
-                            />
+                    {loadingData ? (
+                        <Grid container spacing={3}>
+                            {[1, 2, 3, 4, 5].map(index => (
+                                <Grid item xs={12} md={6} key={index}>
+                                    <Skeleton variant="rectangular" height={56} />
+                                </Grid>
+                            ))}
                         </Grid>
+                    ) : (
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Mão de obra"
+                                    type="number"
+                                    value={formData.operationalCosts.labor}
+                                    onChange={handleCostChange('labor')}
+                                    required
+                                    InputProps={{
+                                        startAdornment: 'R$ '
+                                    }}
+                                    helperText="Salários e encargos trabalhistas"
+                                />
+                            </Grid>
                         <Grid item xs={12} md={6}>
                             <TextField
                                 fullWidth
@@ -251,15 +344,25 @@ export default function FinancialInput() {
                             />
                         </Grid>
                     </Grid>
+                    )}
                 </Paper>
 
                 {/* Vendas por Categoria */}
                 <Paper sx={{ p: 3, mb: 3 }}>
                     <Typography variant="h6" sx={{ mb: 3, color: '#1DB954', fontWeight: 'bold' }}>
-                        📊 Vendas por Categoria de Produto
+                        💻 Vendas de CPUs Produzidas
                     </Typography>
-                    <Grid container spacing={3}>
-                        {formData.productSales.map((sale, index) => (
+                    {loadingData ? (
+                        <Grid container spacing={3}>
+                            {[1, 2, 3, 4, 5].map(index => (
+                                <Grid item xs={12} key={index}>
+                                    <Skeleton variant="rectangular" height={120} />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    ) : (
+                        <Grid container spacing={3}>
+                            {formData.productSales.map((sale, index) => (
                             <Grid item xs={12} key={sale.category}>
                                 <Paper sx={{ p: 2, backgroundColor: '#f8f9fa' }}>
                                     <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
@@ -320,6 +423,7 @@ export default function FinancialInput() {
                             </Grid>
                         ))}
                     </Grid>
+                    )}
                 </Paper>
 
                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
@@ -327,6 +431,7 @@ export default function FinancialInput() {
                         type="button"
                         variant="outlined"
                         onClick={() => navigate('/financial')}
+                        disabled={loading || loadingData}
                         sx={{ 
                             borderColor: '#1DB954',
                             color: '#1DB954'
@@ -338,7 +443,7 @@ export default function FinancialInput() {
                         type="submit"
                         variant="contained"
                         size="large"
-                        disabled={loading}
+                        disabled={loading || loadingData}
                         startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
                         sx={{ 
                             bgcolor: '#1DB954',
@@ -347,7 +452,7 @@ export default function FinancialInput() {
                             }
                         }}
                     >
-                        {loading ? 'Enviando...' : 'Enviar Dados Financeiros'}
+                        {loading ? 'Enviando...' : 'Atualizar Dados Financeiros'}
                     </Button>
                 </Box>
             </form>

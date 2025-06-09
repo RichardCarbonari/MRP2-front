@@ -16,6 +16,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   maintenanceRequests MaintenanceRequest[]
+  orders    Order[]
 
   @@map("users")
 }
@@ -33,4 +34,61 @@ model MaintenanceRequest {
   user        User     @relation(fields: [requestedBy], references: [id])
 
   @@map("maintenance_requests")
+}
+
+// 💻 PRODUTOS - Catálogo de produtos disponíveis
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  category    String    // 'CPU', 'CPU_Servidor', 'Placa de Vídeo', etc.
+  subcategory String?   // 'Gaming', 'Office', 'Server', etc.
+  brand       String
+  price       Float
+  cost        Float     // Custo de aquisição
+  description String?
+  specifications Json?   // Especificações técnicas em JSON
+  stock       Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+// 📋 PEDIDOS - Vendas realizadas
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique
+  customerName String
+  customerEmail String?
+  customerPhone String?
+  status      String      // 'pending', 'processing', 'testing', 'ready', 'delivered', 'cancelled'
+  totalAmount Float
+  totalCost   Float       // Custo total dos produtos
+  profitAmount Float      // Lucro do pedido
+  createdBy   String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deliveredAt DateTime?
+  user        User        @relation(fields: [createdBy], references: [id])
+  items       OrderItem[]
+
+  @@map("orders")
+}
+
+// 📦 ITENS DO PEDIDO - Produtos vendidos em cada pedido
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Float   // Preço de venda
+  unitCost  Float   // Custo do produto
+  subtotal  Float   // Preço total (quantity * unitPrice)
+  profit    Float   // Lucro do item (subtotal - (quantity * unitCost))
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
 } 

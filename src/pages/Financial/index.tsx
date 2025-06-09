@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Paper,
@@ -19,6 +19,7 @@ import {
     Fade,
     Zoom,
     useTheme,
+    Collapse,
 } from '@mui/material';
 import {
     TrendingUp as TrendingUpIcon,
@@ -28,8 +29,13 @@ import {
     Timeline as TimelineIcon,
     Add as AddIcon,
     Refresh as RefreshIcon,
+    Computer as ComputerIcon,
+    ExpandMore as ExpandMoreIcon,
+    ExpandLess as ExpandLessIcon,
+    Speed as SpeedIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 interface ProductSales {
     category: string;
@@ -37,6 +43,24 @@ interface ProductSales {
     revenue: number;
     averagePrice: number;
     profitMargin: number;
+}
+
+interface CPUSalesData {
+    model: string;
+    cpuType: string;
+    unitsSold: number;
+    unitsProduced: number;
+    revenue: number;
+    productionCost: number;
+    averagePrice: number;
+    profitMargin: number;
+    components: {
+        processor: string;
+        motherboard: string;
+        ram: string;
+        storage: string;
+        gpu: string;
+    };
 }
 
 interface FinancialMetrics {
@@ -135,11 +159,37 @@ export default function Financial() {
     const navigate = useNavigate();
     const theme = useTheme();
     const [isLoading, setIsLoading] = useState(false);
+    const [cpuSalesData, setCpuSalesData] = useState<CPUSalesData[]>([]);
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        fetchCPUSalesData();
+    }, []);
+
+    const fetchCPUSalesData = async () => {
+        try {
+            const response = await axios.get('/api/financial/cpu-sales');
+            setCpuSalesData(response.data);
+        } catch (error) {
+            console.error('Erro ao buscar dados de vendas de CPUs:', error);
+        }
+    };
 
     const handleRefresh = () => {
         setIsLoading(true);
+        fetchCPUSalesData();
         // Simular carregamento
         setTimeout(() => setIsLoading(false), 1000);
+    };
+
+    const toggleRowExpansion = (cpuType: string) => {
+        const newExpanded = new Set(expandedRows);
+        if (newExpanded.has(cpuType)) {
+            newExpanded.delete(cpuType);
+        } else {
+            newExpanded.add(cpuType);
+        }
+        setExpandedRows(newExpanded);
     };
 
     const formatCurrency = (value: number) => {
@@ -309,7 +359,7 @@ export default function Financial() {
                     ))}
                 </Box>
 
-                {/* Vendas por Categoria de Produto */}
+                {/* Vendas de CPUs Produzidas */}
                 <Paper sx={{ 
                     p: 3, 
                     mb: 4,
@@ -329,66 +379,123 @@ export default function Financial() {
                             borderRadius: 2
                         }
                     }}>
-                        📊 Vendas por Categoria de Produto
+                        <ComputerIcon sx={{ color: '#2E7D32', mr: 1 }} />
+                        💻 Vendas de CPUs Produzidas
                     </Typography>
                     <TableContainer>
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>Categoria</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>Unidades Vendidas</TableCell>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>Modelo CPU</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Vendas/Produção</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>Receita</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>Preço Médio</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>Margem de Lucro</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>Performance</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Detalhes</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {mockFinancialData.productSales.map((product) => (
-                                    <TableRow 
-                                        key={product.category}
-                                        hover
-                                        sx={{
-                                            transition: 'background-color 0.2s',
-                                            '&:hover': {
-                                                backgroundColor: 'rgba(29, 185, 84, 0.05)'
-                                            }
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                {product.category}
-                                                <Tooltip title={`Total de itens vendidos: ${product.unitsSold}`} arrow>
-                                                    <IconButton size="small">
-                                                        <InfoIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell align="right">{product.unitsSold}</TableCell>
-                                        <TableCell align="right">{formatCurrency(product.revenue)}</TableCell>
-                                        <TableCell align="right">{formatCurrency(product.averagePrice)}</TableCell>
-                                        <TableCell align="right">{product.profitMargin}%</TableCell>
-                                        <TableCell align="right">
-                                            <Chip
-                                                label={
-                                                    product.profitMargin >= 25 ? 'Excelente' : 
-                                                    product.profitMargin >= 20 ? 'Bom' :
-                                                    product.profitMargin >= 15 ? 'Regular' : 'Baixo'
+                                {cpuSalesData.map((cpu) => (
+                                    <React.Fragment key={cpu.cpuType}>
+                                        <TableRow 
+                                            hover
+                                            sx={{
+                                                transition: 'background-color 0.2s',
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(29, 185, 84, 0.05)'
                                                 }
-                                                color={
-                                                    product.profitMargin >= 25 ? 'success' :
-                                                    product.profitMargin >= 20 ? 'primary' :
-                                                    product.profitMargin >= 15 ? 'warning' : 'error'
-                                                }
-                                                size="small"
-                                                sx={{
-                                                    fontWeight: 'bold',
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                                }}
-                                            />
-                                        </TableCell>
-                                    </TableRow>
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <SpeedIcon sx={{ color: '#2E7D32', mr: 1 }} />
+                                                    <Box>
+                                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                            {cpu.model}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="textSecondary">
+                                                            {cpu.cpuType}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
+                                                        {cpu.unitsSold}/{cpu.unitsProduced}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="textSecondary">
+                                                        {((cpu.unitsSold / cpu.unitsProduced) * 100).toFixed(1)}% vendidas
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
+                                                    {formatCurrency(cpu.revenue)}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                    {formatCurrency(cpu.averagePrice)}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                    {cpu.profitMargin.toFixed(1)}%
+                                                </Typography>
+                                            </TableCell>
+
+                                            <TableCell align="center">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => toggleRowExpansion(cpu.cpuType)}
+                                                    sx={{ 
+                                                        color: '#2E7D32',
+                                                        '&:hover': { backgroundColor: '#e8f5e8' }
+                                                    }}
+                                                >
+                                                    {expandedRows.has(cpu.cpuType) ? 
+                                                        <ExpandLessIcon /> : <ExpandMoreIcon />
+                                                    }
+                                                </IconButton>
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                                                <Collapse in={expandedRows.has(cpu.cpuType)} timeout="auto" unmountOnExit>
+                                                    <Box sx={{ margin: 2, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+                                                        <Typography variant="h6" gutterBottom component="div" sx={{ color: '#2E7D32', mb: 2 }}>
+                                                            🔧 Componentes da CPU
+                                                        </Typography>
+                                                        <Grid container spacing={2}>
+                                                            <Grid item xs={12} md={6}>
+                                                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                                                    <strong>Processador:</strong> {cpu.components.processor}
+                                                                </Typography>
+                                                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                                                    <strong>Placa-mãe:</strong> {cpu.components.motherboard}
+                                                                </Typography>
+                                                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                                                    <strong>Memória RAM:</strong> {cpu.components.ram}
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={12} md={6}>
+                                                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                                                    <strong>Armazenamento:</strong> {cpu.components.storage}
+                                                                </Typography>
+                                                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                                                    <strong>Placa de Vídeo:</strong> {cpu.components.gpu}
+                                                                </Typography>
+                                                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                                                    <strong>Custo de Produção:</strong> {formatCurrency(cpu.productionCost)}
+                                                                </Typography>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </Box>
+                                                </Collapse>
+                                            </TableCell>
+                                        </TableRow>
+                                    </React.Fragment>
                                 ))}
                             </TableBody>
                         </Table>
@@ -493,3 +600,4 @@ export default function Financial() {
         </Fade>
     );
 } 
+

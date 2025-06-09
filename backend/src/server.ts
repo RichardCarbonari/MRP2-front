@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import maintenanceRoutes from './routes/maintenance';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
+import productRoutes from './routes/products';
+import financialRoutes from './routes/financial';
+import inventoryRoutes from './routes/inventory';
+import ordersRoutes from './routes/orders';
 
 dotenv.config({ path: './dataBase.env' });
 
@@ -35,6 +39,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/financial', financialRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/orders', ordersRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

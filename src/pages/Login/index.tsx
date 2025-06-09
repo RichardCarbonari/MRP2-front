@@ -12,8 +12,18 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert
+  Alert,
+  CircularProgress,
+  InputAdornment,
+  IconButton
 } from '@mui/material';
+import { 
+  Visibility, 
+  VisibilityOff, 
+  Email as EmailIcon,
+  Lock as LockIcon,
+  CheckCircle as CheckIcon
+} from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Login: React.FC = () => {
@@ -27,6 +37,13 @@ const Login: React.FC = () => {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [verifiedUser, setVerifiedUser] = useState<{id: string, email: string, name: string, role: string} | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resetStep, setResetStep] = useState('email'); // 'email' or 'password'
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -67,33 +84,86 @@ const Login: React.FC = () => {
     setError('');
   };
 
-  const handleForgotPasswordSubmit = () => {
-    // Simulação simples de recuperação de senha
-    if (!forgotPasswordEmail) {
-      setForgotPasswordMessage('Por favor, digite seu email.');
-      return;
-    }
+  const handleForgotPasswordSubmit = async () => {
+    if (resetStep === 'email') {
+      // Verificar se email existe
+      if (!forgotPasswordEmail) {
+        setForgotPasswordMessage('Por favor, digite seu email.');
+        return;
+      }
 
-    // Lista de emails válidos do sistema
-    const validEmails = [
-      'carlos.diretor@mrp2cpu.com.br',
-      'joao.manutencao@mrp2cpu.com.br',
-      'maria.substrato@mrp2cpu.com.br',
-      'pedro.substrato@mrp2cpu.com.br',
-      'ana.bonding@mrp2cpu.com.br',
-      'lucas.bonding@mrp2cpu.com.br',
-      'patricia.encaps@mrp2cpu.com.br',
-      'rodrigo.encaps@mrp2cpu.com.br',
-      'fernanda.teste@mrp2cpu.com.br',
-      'rafael.teste@mrp2cpu.com.br',
-      'juliana.embalagem@mrp2cpu.com.br',
-      'marcos.embalagem@mrp2cpu.com.br'
-    ];
+      setLoading(true);
+      try {
+        const response = await fetch('/api/auth/verify-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: forgotPasswordEmail })
+        });
 
-    if (validEmails.includes(forgotPasswordEmail)) {
-      setForgotPasswordMessage('✅ Instruções de recuperação enviadas para seu email!');
+        const data = await response.json();
+
+        if (response.ok) {
+          setEmailVerified(true);
+          setVerifiedUser(data.user);
+          setResetStep('password');
+          setForgotPasswordMessage(`✅ Email encontrado! Olá ${data.user.name}, agora você pode definir uma nova senha.`);
+        } else {
+          setForgotPasswordMessage('❌ Email não encontrado no sistema.');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar email:', error);
+        setForgotPasswordMessage('❌ Erro de conexão. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
     } else {
-      setForgotPasswordMessage('❌ Email não encontrado no sistema.');
+      // Redefinir senha
+      if (!newPassword || !confirmPassword) {
+        setForgotPasswordMessage('Por favor, preencha todos os campos.');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        setForgotPasswordMessage('❌ As senhas não conferem.');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        setForgotPasswordMessage('❌ A senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch('/api/auth/reset-password', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            email: forgotPasswordEmail,
+            newPassword: newPassword 
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setForgotPasswordMessage('✅ Senha alterada com sucesso! Você já pode fazer login com a nova senha.');
+          setTimeout(() => {
+            handleCloseForgotPassword();
+          }, 2000);
+        } else {
+          setForgotPasswordMessage(`❌ ${data.error || 'Erro ao alterar senha'}`);
+        }
+      } catch (error) {
+        console.error('Erro ao redefinir senha:', error);
+        setForgotPasswordMessage('❌ Erro de conexão. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -101,6 +171,13 @@ const Login: React.FC = () => {
     setForgotPasswordOpen(false);
     setForgotPasswordEmail('');
     setForgotPasswordMessage('');
+    setEmailVerified(false);
+    setVerifiedUser(null);
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setLoading(false);
+    setResetStep('email');
   };
 
   return (
@@ -186,50 +263,148 @@ const Login: React.FC = () => {
         fullWidth
       >
         <DialogTitle>
-          <Typography variant="h6" component="div">
-            🔑 Recuperar Senha
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {resetStep === 'email' ? <EmailIcon sx={{ color: '#2E7D32' }} /> : <LockIcon sx={{ color: '#2E7D32' }} />}
+            <Typography variant="h6" component="div">
+              {resetStep === 'email' ? '🔍 Verificar Email' : '🔑 Nova Senha'}
+            </Typography>
+          </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
-            Digite seu email para receber instruções de recuperação de senha.
-          </Typography>
+          {resetStep === 'email' ? (
+            <>
+              <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+                Digite seu email para verificar se existe no sistema. Se encontrado, você poderá definir uma nova senha.
+              </Typography>
+              
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Email"
+                type="email"
+                fullWidth
+                variant="outlined"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                placeholder="usuario@mrp2.com"
+                disabled={loading}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon sx={{ color: '#666' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary' }}>
+                💡 <strong>Emails válidos:</strong> carlos.diretor@mrp2cpu.com.br, funcionario@mrp2.com, joao.manutencao@mrp2cpu.com.br
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Alert severity="success" sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckIcon />
+                  <Typography variant="body2">
+                    Email verificado! Usuário: <strong>{verifiedUser?.name}</strong>
+                  </Typography>
+                </Box>
+              </Alert>
+              
+              <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+                Agora defina uma nova senha para sua conta.
+              </Typography>
+              
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Nova Senha"
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                variant="outlined"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Digite sua nova senha"
+                disabled={loading}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockIcon sx={{ color: '#666' }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mb: 2 }}
+              />
+              
+              <TextField
+                margin="dense"
+                label="Confirmar Nova Senha"
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                variant="outlined"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirme sua nova senha"
+                disabled={loading}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockIcon sx={{ color: '#666' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary' }}>
+                💡 A senha deve ter pelo menos 6 caracteres.
+              </Typography>
+            </>
+          )}
           
           {forgotPasswordMessage && (
             <Alert 
               severity={forgotPasswordMessage.includes('✅') ? 'success' : 'error'}
-              sx={{ mb: 2 }}
+              sx={{ mt: 2 }}
             >
               {forgotPasswordMessage}
             </Alert>
           )}
-          
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Email"
-            type="email"
-            fullWidth
-            variant="outlined"
-            value={forgotPasswordEmail}
-            onChange={(e) => setForgotPasswordEmail(e.target.value)}
-            placeholder="seu.email@mrp2cpu.com.br"
-          />
-          
-          <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary' }}>
-            💡 <strong>Dica:</strong> Use um dos emails válidos do sistema para testar a funcionalidade.
-          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseForgotPassword}>
+          <Button 
+            onClick={handleCloseForgotPassword}
+            disabled={loading}
+          >
             Cancelar
           </Button>
+          {resetStep === 'password' && (
+            <Button 
+              onClick={() => setResetStep('email')}
+              disabled={loading}
+              sx={{ color: '#666' }}
+            >
+              Voltar
+            </Button>
+          )}
           <Button 
             onClick={handleForgotPasswordSubmit}
             variant="contained"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
             sx={{ backgroundColor: '#2E7D32' }}
           >
-            Enviar
+            {loading ? 'Processando...' : (resetStep === 'email' ? 'Verificar Email' : 'Alterar Senha')}
           </Button>
         </DialogActions>
       </Dialog>
