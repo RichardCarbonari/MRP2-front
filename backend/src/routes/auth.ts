@@ -72,4 +72,52 @@ router.post('/register', validateRegister, async (req: Request, res: Response, n
   }
 });
 
+// Verificar email para recuperação de senha
+router.post('/verify-email', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: 'Email é obrigatório'
+      });
+    }
+
+    const result = await authService.verifyEmail(email);
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === 'Email não encontrado') {
+      return res.status(404).json({ message: error.message });
+    }
+    next(error);
+  }
+});
+
+// Redefinir senha
+router.put('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({
+        error: 'Email e nova senha são obrigatórios'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        error: 'A senha deve ter pelo menos 6 caracteres'
+      });
+    }
+
+    const result = await authService.resetPassword(email, newPassword);
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === 'Email não encontrado') {
+      return res.status(404).json({ error: error.message });
+    }
+    next(error);
+  }
+});
+
 export default router; 

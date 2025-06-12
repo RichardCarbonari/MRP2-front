@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -322,6 +323,105 @@ router.get('/sales-by-period', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Erro ao buscar vendas por período:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// 💻 **VENDAS DE CPUs ESPECÍFICAS**
+router.get('/cpu-sales', authMiddleware, async (req, res) => {
+  try {
+    // Dados mockados de vendas de CPUs da fábrica
+    const cpuSalesData = [
+      {
+        model: 'Gaming Básico',
+        cpuType: 'gaming-basic',
+        unitsSold: 45,
+        unitsProduced: 50,
+        revenue: 112500,
+        productionCost: 87500,
+        averagePrice: 2500,
+        profitMargin: 22.2,
+        components: {
+          processor: 'Intel Core i5-13400F',
+          motherboard: 'ASUS TUF B660M-PLUS WiFi D4',
+          ram: 'Corsair Vengeance LPX 16GB DDR4',
+          storage: 'Kingston NV2 1TB NVMe',
+          gpu: 'NVIDIA GeForce RTX 3060 12GB'
+        }
+      },
+      {
+        model: 'Gaming Avançado',
+        cpuType: 'gaming-advanced',
+        unitsSold: 32,
+        unitsProduced: 35,
+        revenue: 134400,
+        productionCost: 104300,
+        averagePrice: 4200,
+        profitMargin: 22.4,
+        components: {
+          processor: 'Intel Core i7-13700K',
+          motherboard: 'ASUS ROG STRIX Z690-E GAMING',
+          ram: 'Corsair Vengeance RGB Pro 32GB DDR4',
+          storage: 'Samsung 980 PRO 2TB NVMe',
+          gpu: 'NVIDIA GeForce RTX 4070 Ti'
+        }
+      },
+      {
+        model: 'Workstation',
+        cpuType: 'workstation',
+        unitsSold: 28,
+        unitsProduced: 30,
+        revenue: 106400,
+        productionCost: 81600,
+        averagePrice: 3800,
+        profitMargin: 23.3,
+        components: {
+          processor: 'Intel Core i7-13700',
+          motherboard: 'ASUS ProArt B660-CREATOR D4',
+          ram: 'Corsair Vengeance LPX 32GB DDR4',
+          storage: 'Samsung 980 PRO 1TB NVMe',
+          gpu: 'NVIDIA RTX A2000 12GB'
+        }
+      },
+      {
+        model: 'Office',
+        cpuType: 'office',
+        unitsSold: 67,
+        unitsProduced: 70,
+        revenue: 120600,
+        productionCost: 98800,
+        averagePrice: 1800,
+        profitMargin: 18.1,
+        components: {
+          processor: 'Intel Core i3-13100',
+          motherboard: 'ASUS PRIME H610M-E D4',
+          ram: 'Corsair Vengeance LPX 8GB DDR4',
+          storage: 'Kingston NV2 500GB NVMe',
+          gpu: 'Intel UHD Graphics 730'
+        }
+      },
+      {
+        model: 'Budget',
+        cpuType: 'budget',
+        unitsSold: 89,
+        unitsProduced: 95,
+        revenue: 106800,
+        productionCost: 89300,
+        averagePrice: 1200,
+        profitMargin: 16.4,
+        components: {
+          processor: 'AMD Ryzen 3 4300G',
+          motherboard: 'ASUS PRIME A320M-K',
+          ram: 'Corsair Vengeance LPX 8GB DDR4',
+          storage: 'Kingston NV2 250GB NVMe',
+          gpu: 'AMD Radeon Graphics (Integrada)'
+        }
+      }
+    ];
+
+    res.json(cpuSalesData);
+  } catch (error) {
+    console.error('Erro ao buscar vendas de CPUs:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
 });

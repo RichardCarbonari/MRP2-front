@@ -58,14 +58,13 @@ const Header = () => {
             case 'maintenance':
                 return [
                     { text: 'Dashboard', path: '/maintenance-home', icon: DashboardIcon },
-                    { text: 'Pedidos', path: '/maintenance-requests', icon: AssignmentIcon },
-                    { text: 'Gerenciamento', path: '/maintenance/management', icon: BuildIcon }
+                    { text: 'Pedidos', path: '/maintenance-requests', icon: AssignmentIcon }
                 ];
             case 'employee':
                 return [
                     { text: 'Dashboard', path: '/employee-home', icon: DashboardIcon },
                     { text: 'Perfil', path: '/employee', icon: PersonIcon },
-                    { text: 'Manutenção', path: '/maintenance-requests', icon: BuildIcon },
+                    { text: 'Manutenção', path: '/employee-maintenance-requests', icon: BuildIcon },
                     { text: 'Qualidade', path: '/quality-register', icon: VerifiedIcon }
                 ];
             default:

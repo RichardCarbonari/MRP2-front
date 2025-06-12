@@ -172,11 +172,18 @@ export default function Maintenance() {
         try {
             setError(null);
             
+            // Obter token de autenticação
+            const token = localStorage.getItem('token');
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+            
             // Carregar equipamentos, registros e métricas em paralelo
             const [equipmentResponse, recordsResponse, metricsResponse] = await Promise.all([
-                fetch('/api/maintenance/equipment'),
-                fetch('/api/maintenance/records'),
-                fetch('/api/maintenance/metrics')
+                fetch('/api/maintenance/equipment', { headers }),
+                fetch('/api/maintenance/records', { headers }),
+                fetch('/api/maintenance/metrics', { headers })
             ]);
 
             if (!equipmentResponse.ok || !recordsResponse.ok || !metricsResponse.ok) {

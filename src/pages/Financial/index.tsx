@@ -35,7 +35,7 @@ import {
     Speed as SpeedIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/api';
 
 interface ProductSales {
     category: string;
@@ -168,7 +168,7 @@ export default function Financial() {
 
     const fetchCPUSalesData = async () => {
         try {
-            const response = await axios.get('/api/financial/cpu-sales');
+            const response = await api.get('/financial/cpu-sales');
             setCpuSalesData(response.data);
         } catch (error) {
             console.error('Erro ao buscar dados de vendas de CPUs:', error);

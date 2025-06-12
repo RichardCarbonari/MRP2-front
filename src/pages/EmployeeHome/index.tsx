@@ -16,7 +16,7 @@ const EmployeeHome = () => {
     },
     { 
       text: 'Manutenção', 
-      path: '/maintenance-requests',
+      path: '/employee-maintenance-requests',
       icon: <BuildIcon sx={{ fontSize: 40 }} />,
       description: 'Abra chamados de manutenção e acompanhe o status'
     },

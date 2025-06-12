@@ -30,7 +30,8 @@ import {
     Snackbar,
     CircularProgress,
     Tooltip,
-    Divider
+    Divider,
+
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
@@ -44,6 +45,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import DoneIcon from '@mui/icons-material/Done';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import RefreshIcon from '@mui/icons-material/Refresh';
+
 import maintenanceService, { MaintenanceRequest, MaintenanceStats } from '../../services/maintenanceService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -183,6 +185,12 @@ const MaintenanceManagement = () => {
 
     const filteredRequests = requests;
 
+    // Separar pedidos por status
+    const activeRequests = filteredRequests.filter(request => request.status !== 'Concluída');
+    const completedRequests = filteredRequests.filter(request => request.status === 'Concluída');
+
+
+
     return (
         <Fade in={true} timeout={800}>
             <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
@@ -222,7 +230,7 @@ const MaintenanceManagement = () => {
 
                 {/* Dashboard Stats */}
                 {stats && (
-                    <Grid container spacing={3} sx={{ mb: 4 }}>
+                    <Grid container spacing={2} sx={{ mb: 4 }}>
                         {[
                             {
                                 title: 'Pedidos Pendentes',
@@ -251,7 +259,7 @@ const MaintenanceManagement = () => {
                                 urgent: stats.highPriorityPending > 0
                             }
                         ].map((stat, index) => (
-                            <Grid item xs={12} sm={6} md={3} key={index}>
+                            <Grid item xs={12} sm={6} lg={3} key={index}>
                                 <Card sx={{ 
                                     backgroundColor: stat.urgent ? '#ffebee' : 'inherit',
                                     border: stat.urgent ? '2px solid #f44336' : 'none'
@@ -281,18 +289,19 @@ const MaintenanceManagement = () => {
                 )}
 
                 {/* Filtros */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{ p: { xs: 2, md: 3 }, mb: 3 }}>
                     <Typography variant="h6" sx={{ mb: 2, color: '#1DB954' }}>
                         Filtros
                     </Typography>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid item xs={12} sm={6} lg={3}>
                             <TextField
                                 select
                                 fullWidth
                                 label="Status"
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
+                                size="small"
                             >
                                 <MenuItem value="">Todos</MenuItem>
                                 {statuses.map((status) => (
@@ -300,13 +309,14 @@ const MaintenanceManagement = () => {
                                 ))}
                             </TextField>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid item xs={12} sm={6} lg={3}>
                             <TextField
                                 select
                                 fullWidth
                                 label="Prioridade"
                                 value={priorityFilter}
                                 onChange={(e) => setPriorityFilter(e.target.value)}
+                                size="small"
                             >
                                 <MenuItem value="">Todas</MenuItem>
                                 {priorities.map((priority) => (
@@ -314,11 +324,15 @@ const MaintenanceManagement = () => {
                                 ))}
                             </TextField>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid item xs={12} sm={12} lg={3}>
                             <Button
                                 startIcon={<FilterListIcon />}
                                 onClick={handleClearFilters}
-                                sx={{ color: '#1DB954' }}
+                                sx={{ 
+                                    color: '#1DB954',
+                                    width: { xs: '100%', lg: 'auto' }
+                                }}
+                                size="small"
                             >
                                 Limpar Filtros
                             </Button>
@@ -326,11 +340,11 @@ const MaintenanceManagement = () => {
                     </Grid>
                 </Paper>
 
-                {/* Lista de Pedidos */}
-                <Paper sx={{ width: '100%' }}>
+                {/* Lista de Pedidos Ativos */}
+                <Paper sx={{ width: '100%', mb: 3, overflow: 'hidden' }}>
                     <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                         <Typography variant="h6" sx={{ color: '#1DB954' }}>
-                            Todos os Pedidos de Manutenção ({requests.length})
+                            Pedidos Ativos ({activeRequests.length})
                         </Typography>
                     </Box>
 
@@ -338,23 +352,29 @@ const MaintenanceManagement = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                             <CircularProgress />
                         </Box>
+                    ) : activeRequests.length === 0 ? (
+                        <Box sx={{ p: 4, textAlign: 'center' }}>
+                            <Typography variant="body1" color="text.secondary">
+                                Nenhum pedido ativo encontrado
+                            </Typography>
+                        </Box>
                     ) : (
-                        <TableContainer>
-                            <Table>
+                        <TableContainer sx={{ maxHeight: 600, overflowX: 'auto' }}>
+                            <Table stickyHeader sx={{ minWidth: 800 }}>
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell>Equipamento</TableCell>
-                                        <TableCell>Descrição</TableCell>
-                                        <TableCell>Solicitante</TableCell>
-                                        <TableCell>Departamento</TableCell>
-                                        <TableCell align="center">Prioridade</TableCell>
-                                        <TableCell align="center">Status</TableCell>
-                                        <TableCell>Data</TableCell>
-                                        <TableCell align="right">Ações</TableCell>
+                                        <TableCell sx={{ minWidth: 150, fontWeight: 'bold' }}>Equipamento</TableCell>
+                                        <TableCell sx={{ minWidth: 200, fontWeight: 'bold' }}>Descrição</TableCell>
+                                        <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Solicitante</TableCell>
+                                        <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Departamento</TableCell>
+                                        <TableCell align="center" sx={{ minWidth: 100, fontWeight: 'bold' }}>Prioridade</TableCell>
+                                        <TableCell align="center" sx={{ minWidth: 120, fontWeight: 'bold' }}>Status</TableCell>
+                                        <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Data</TableCell>
+                                        <TableCell align="right" sx={{ minWidth: 140, fontWeight: 'bold' }}>Ações</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {filteredRequests.map((request) => (
+                                    {activeRequests.map((request) => (
                                         <TableRow 
                                             key={request.id}
                                             sx={{ 
@@ -443,6 +463,111 @@ const MaintenanceManagement = () => {
                                                         </IconButton>
                                                     </Tooltip>
                                                 )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    )}
+                </Paper>
+
+                {/* Lista de Pedidos Concluídos */}
+                <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+                    <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+                        <Typography variant="h6" sx={{ color: '#4caf50' }}>
+                            Pedidos Concluídos ({completedRequests.length})
+                        </Typography>
+                    </Box>
+
+                    {completedRequests.length === 0 ? (
+                        <Box sx={{ p: 4, textAlign: 'center' }}>
+                            <Typography variant="body1" color="text.secondary">
+                                Nenhum pedido concluído encontrado
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <TableContainer sx={{ maxHeight: 600, overflowX: 'auto' }}>
+                            <Table stickyHeader sx={{ minWidth: 800 }}>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell sx={{ minWidth: 150, fontWeight: 'bold' }}>Equipamento</TableCell>
+                                        <TableCell sx={{ minWidth: 200, fontWeight: 'bold' }}>Descrição</TableCell>
+                                        <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Solicitante</TableCell>
+                                        <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Departamento</TableCell>
+                                        <TableCell align="center" sx={{ minWidth: 100, fontWeight: 'bold' }}>Prioridade</TableCell>
+                                        <TableCell align="center" sx={{ minWidth: 120, fontWeight: 'bold' }}>Status</TableCell>
+                                        <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Data</TableCell>
+                                        <TableCell align="right" sx={{ minWidth: 120, fontWeight: 'bold' }}>Ações</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {completedRequests.map((request) => (
+                                        <TableRow 
+                                            key={request.id}
+                                            sx={{ 
+                                                backgroundColor: '#f1f8e9',
+                                                '&:hover': { backgroundColor: '#e8f5e8' }
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                                    {request.equipment}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2" sx={{ 
+                                                    maxWidth: 300,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {request.description}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {request.requestedByName || request.requestedBy}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>{request.department}</TableCell>
+                                            <TableCell align="center">
+                                                <Chip
+                                                    label={request.priority}
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: `${maintenanceService.getPriorityColor(request.priority)}22`,
+                                                        color: maintenanceService.getPriorityColor(request.priority),
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <Chip
+                                                    icon={getStatusIcon(request.status)}
+                                                    label={request.status}
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: '#4caf5022',
+                                                        color: '#4caf50',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption">
+                                                    {new Date(request.requestedAt).toLocaleDateString('pt-BR')}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Tooltip title="Ver detalhes">
+                                                    <IconButton 
+                                                        onClick={() => handleViewRequest(request)}
+                                                        sx={{ color: '#4caf50' }}
+                                                    >
+                                                        <VisibilityIcon />
+                                                    </IconButton>
+                                                </Tooltip>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -562,7 +687,7 @@ const MaintenanceManagement = () => {
                 <Dialog
                     open={isUpdateDialogOpen}
                     onClose={() => setIsUpdateDialogOpen(false)}
-                    maxWidth="sm"
+                    maxWidth="md"
                     fullWidth
                 >
                     <DialogTitle sx={{ backgroundColor: '#1DB954', color: 'white' }}>
@@ -571,15 +696,16 @@ const MaintenanceManagement = () => {
                             Atualizar Pedido de Manutenção
                         </Box>
                     </DialogTitle>
-                    <DialogContent sx={{ pt: 3 }}>
-                        <Grid container spacing={2}>
+                    <DialogContent sx={{ pt: 4, pb: 3 }}>
+                        <Grid container spacing={3}>
                             <Grid item xs={12}>
-                                <FormControl fullWidth>
+                                <FormControl fullWidth sx={{ mb: 2 }}>
                                     <InputLabel>Novo Status</InputLabel>
                                     <Select
                                         value={newStatus}
                                         label="Novo Status"
                                         onChange={(e) => setNewStatus(e.target.value)}
+                                        sx={{ minHeight: 56 }}
                                     >
                                         {statuses.map((status) => (
                                             <MenuItem key={status} value={status}>
@@ -596,8 +722,8 @@ const MaintenanceManagement = () => {
                             {newStatus === 'Concluída' && (
                                 <>
                                     <Grid item xs={12}>
-                                        <Divider sx={{ my: 2 }}>
-                                            <Typography variant="caption" color="text.secondary">
+                                        <Divider sx={{ my: 3 }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
                                                 Informações de Conclusão
                                             </Typography>
                                         </Divider>
@@ -609,9 +735,17 @@ const MaintenanceManagement = () => {
                                             value={solution}
                                             onChange={(e) => setSolution(e.target.value)}
                                             multiline
-                                            rows={3}
+                                            rows={4}
                                             placeholder="Descreva a solução aplicada para resolver o problema..."
                                             required
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    padding: '12px 14px',
+                                                },
+                                                '& .MuiInputBase-inputMultiline': {
+                                                    padding: '0 !important',
+                                                }
+                                            }}
                                         />
                                     </Grid>
                                 </>
@@ -624,8 +758,20 @@ const MaintenanceManagement = () => {
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                     multiline
-                                    rows={2}
+                                    rows={3}
                                     placeholder="Adicione observações sobre o atendimento..."
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            padding: '12px 14px',
+                                        },
+                                        '& .MuiInputBase-inputMultiline': {
+                                            padding: '0 !important',
+                                        },
+                                        '& .MuiFormLabel-root': {
+                                            backgroundColor: 'white',
+                                            padding: '0 8px',
+                                        }
+                                    }}
                                 />
                             </Grid>
                         </Grid>

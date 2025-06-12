@@ -36,12 +36,17 @@ const MaintenanceHome = () => {
             setLoading(true);
             const [statsData, requestsData] = await Promise.all([
                 maintenanceService.getStats(),
-                maintenanceService.getAllRequests({ status: undefined, priority: undefined })
+                maintenanceService.getAllRequests() // Usar dados reais
             ]);
             
             setStats(statsData);
-            // Pegar os 3 mais recentes
-            setRecentRequests(requestsData.slice(0, 3));
+            
+            // Ordenar por data mais recente e pegar os 3 primeiros
+            const sortedRequests = requestsData
+                .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())
+                .slice(0, 3);
+            
+            setRecentRequests(sortedRequests);
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -54,7 +59,7 @@ const MaintenanceHome = () => {
             title: 'Gestão de Pedidos',
             description: 'Visualize e resolva todos os pedidos de manutenção',
             icon: <AssignmentIcon sx={{ fontSize: 40, color: '#1DB954' }} />,
-            path: '/maintenance/management'
+            path: '/maintenance-requests'
         }
     ];
 
@@ -64,6 +69,27 @@ const MaintenanceHome = () => {
 
     const getStatusColor = (status: string) => {
         return maintenanceService.getStatusColor(status);
+    };
+
+    const getTimeAgo = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInMilliseconds = now.getTime() - date.getTime();
+        const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        const diffInDays = Math.floor(diffInHours / 24);
+
+        if (diffInMinutes < 60) {
+            return diffInMinutes <= 1 ? 'Agora há pouco' : `Há ${diffInMinutes} minutos`;
+        } else if (diffInHours < 24) {
+            return diffInHours === 1 ? 'Há 1 hora' : `Há ${diffInHours} horas`;
+        } else if (diffInDays === 1) {
+            return 'Ontem';
+        } else if (diffInDays < 7) {
+            return `Há ${diffInDays} dias`;
+        } else {
+            return date.toLocaleDateString('pt-BR');
+        }
     };
 
     if (loading) {
@@ -248,7 +274,7 @@ const MaintenanceHome = () => {
                             fontWeight: 'bold'
                         }}
                     >
-                        Pedidos Recentes
+                        Últimos Pedidos (3 mais recentes)
                     </Typography>
                 </Box>
 
@@ -268,7 +294,7 @@ const MaintenanceHome = () => {
                                         transform: 'translateY(-5px)'
                                     }
                                 }}
-                                onClick={() => navigate('/maintenance/management')}
+                                onClick={() => navigate('/maintenance-requests')}
                             >
                                 <CardContent>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -302,7 +328,7 @@ const MaintenanceHome = () => {
                                     </Box>
 
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                        Solicitado em: {new Date(request.requestedAt).toLocaleDateString('pt-BR')}
+                                        Solicitado: {getTimeAgo(request.requestedAt)}
                                     </Typography>
 
                                     <Typography variant="body2" sx={{ mb: 2 }}>

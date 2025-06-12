@@ -12,6 +12,24 @@ const api = axios.create({
   }
 });
 
+// Interceptor para adicionar o token de autenticação
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    console.log('🔑 Token encontrado:', token ? 'SIM' : 'NÃO');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Token adicionado ao header');
+    }
+    console.log('📡 Fazendo requisição para:', config.url);
+    return config;
+  },
+  (error) => {
+    console.error('❌ Erro no interceptor:', error);
+    return Promise.reject(error);
+  }
+);
+
 export interface MaintenanceRequest {
   id: string;
   equipment: string;
@@ -107,13 +125,19 @@ const maintenanceService = {
   // Listar TODOS os pedidos (para equipe de manutenção)
   getAllRequests: async (filters?: { status?: string; priority?: string }): Promise<MaintenanceRequest[]> => {
     try {
+      console.log('🔧 getAllRequests chamado com filtros:', filters);
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.priority) params.append('priority', filters.priority);
       
-      const response = await api.get(`/all-requests${params.toString() ? '?' + params.toString() : ''}`);
+      const url = `/all-requests${params.toString() ? '?' + params.toString() : ''}`;
+      console.log('🔧 URL da requisição:', url);
+      
+      const response = await api.get(url);
+      console.log('✅ Resposta recebida:', response.data.length, 'solicitações');
       return response.data;
     } catch (error) {
+      console.error('❌ Erro em getAllRequests:', error);
       handleApiError(error);
       throw error;
     }
@@ -145,6 +169,19 @@ const maintenanceService = {
   getStats: async (): Promise<MaintenanceStats> => {
     try {
       const response = await api.get('/stats');
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
+
+  // 🔧 FUNCIONALIDADES MOCKADAS (TEMPORÁRIAS)
+  
+  // Buscar dados mockados realistas de máquinas industriais
+  getMockRequests: async (): Promise<MaintenanceRequest[]> => {
+    try {
+      const response = await api.get('/mock-requests');
       return response.data;
     } catch (error) {
       handleApiError(error);

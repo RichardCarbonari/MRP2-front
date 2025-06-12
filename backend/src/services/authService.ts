@@ -100,6 +100,47 @@ const authService = {
     } catch (error) {
       throw new Error('Token inválido');
     }
+  },
+
+  verifyEmail: async (email: string) => {
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      throw new Error('Email não encontrado');
+    }
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      }
+    };
+  },
+
+  resetPassword: async (email: string, newPassword: string) => {
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      throw new Error('Email não encontrado');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword }
+    });
+
+    return {
+      message: 'Senha alterada com sucesso',
+      timestamp: new Date().toISOString()
+    };
   }
 };
 

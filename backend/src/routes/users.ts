@@ -6,6 +6,33 @@ import bcrypt from 'bcrypt';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Buscar dados do usuário logado
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar dados do usuário' });
+  }
+});
+
 // Listar todos os usuários (apenas admin)
 router.get('/', authMiddleware, isAdmin, async (req, res) => {
   try {

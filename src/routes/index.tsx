@@ -24,6 +24,7 @@ import FinancialInput from '../pages/FinancialInput';
 import Maintenance from '../pages/Maintenance';
 import Settings from '../pages/Settings';
 import UserManagement from '../pages/UserManagement';
+import EmployeeMaintenanceRequests from '../pages/EmployeeMaintenanceRequests';
 
 // Protected Route Component
 const ProtectedRoute = ({ 
@@ -82,6 +83,7 @@ export const AppRoutes = () => {
       <Route path="/employee" element={<EmployeeLayout><Employee /></EmployeeLayout>} />
       <Route path="/quality-register" element={<EmployeeLayout><QualityRegister /></EmployeeLayout>} />
       <Route path="/financial-input" element={<EmployeeLayout><FinancialInput /></EmployeeLayout>} />
+      <Route path="/employee-maintenance-requests" element={<EmployeeLayout><EmployeeMaintenanceRequests /></EmployeeLayout>} />
 
       {/* Maintenance Routes */}
       <Route path="/maintenance-home" element={<MaintenanceLayout><MaintenanceHome /></MaintenanceLayout>} />

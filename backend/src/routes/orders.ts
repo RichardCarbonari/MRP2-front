@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
@@ -234,22 +235,6 @@ router.get('/', (req, res) => {
         res.json(orders);
     } catch (error) {
         console.error('Erro ao buscar pedidos:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-});
-
-router.get('/:id', (req, res) => {
-    try {
-        const { id } = req.params;
-        const order = orders.find(o => o.id === id);
-        
-        if (!order) {
-            return res.status(404).json({ error: 'Pedido não encontrado' });
-        }
-        
-        res.json(order);
-    } catch (error) {
-        console.error('Erro ao buscar pedido:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
@@ -816,6 +801,153 @@ router.post('/teams/:id/tasks', (req, res) => {
     };
     
     res.status(201).json(newTask);
+});
+
+// ===============================================
+// QUALITY ENDPOINTS (TEMPORARY - DEVE SER MOVIDO PARA /api/quality)
+// ===============================================
+
+// GET /api/orders/quality/reports - Buscar relatórios de qualidade
+router.get('/quality/reports', authMiddleware, (req, res) => {
+    try {
+        console.log('✅ GET /api/orders/quality/reports - Buscando relatórios de qualidade');
+        
+        const qualityReports = [
+            {
+                id: 'QR001',
+                title: 'Relatório de Qualidade - Dezembro 2024',
+                type: 'monthly',
+                status: 'completed',
+                createdAt: '2024-12-15T10:00:00Z',
+                updatedAt: '2024-12-15T10:00:00Z',
+                summary: {
+                    totalTests: 156,
+                    passedTests: 148,
+                    failedTests: 8,
+                    passRate: 94.87,
+                    categories: {
+                        hardware: { total: 78, passed: 75, failed: 3 },
+                        software: { total: 45, passed: 43, failed: 2 },
+                        integration: { total: 33, passed: 30, failed: 3 }
+                    }
+                }
+            },
+            {
+                id: 'QR002', 
+                title: 'Relatório Semanal - Semana 50',
+                type: 'weekly',
+                status: 'in_progress',
+                createdAt: '2024-12-12T09:00:00Z',
+                updatedAt: '2024-12-16T14:30:00Z',
+                summary: {
+                    totalTests: 45,
+                    passedTests: 42,
+                    failedTests: 3,
+                    passRate: 93.33,
+                    categories: {
+                        hardware: { total: 20, passed: 19, failed: 1 },
+                        software: { total: 15, passed: 14, failed: 1 },
+                        integration: { total: 10, passed: 9, failed: 1 }
+                    }
+                }
+            }
+        ];
+        
+        res.json(qualityReports);
+    } catch (error) {
+        console.error('❌ Erro ao buscar relatórios de qualidade:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// GET /api/orders/quality/metrics - Buscar métricas de qualidade
+router.get('/quality/metrics', authMiddleware, (req, res) => {
+    try {
+        console.log('✅ GET /api/orders/quality/metrics - Buscando métricas de qualidade');
+        
+        const qualityMetrics = {
+            overview: {
+                totalProducts: 342,
+                qualityScore: 94.2,
+                defectRate: 5.8,
+                customerSatisfaction: 4.6
+            },
+            trends: {
+                lastMonth: {
+                    qualityScore: 93.1,
+                    defectRate: 6.9,
+                    improvement: "+1.1%"
+                },
+                lastWeek: {
+                    qualityScore: 95.2,
+                    defectRate: 4.8,
+                    improvement: "+2.1%"
+                }
+            },
+            categories: [
+                {
+                    name: 'Hardware Quality',
+                    score: 96.5,
+                    trend: 'up',
+                    issues: 12,
+                    resolved: 10
+                },
+                {
+                    name: 'Software Quality', 
+                    score: 92.8,
+                    trend: 'stable',
+                    issues: 8,
+                    resolved: 7
+                },
+                {
+                    name: 'Integration Tests',
+                    score: 89.4,
+                    trend: 'down',
+                    issues: 15,
+                    resolved: 11
+                }
+            ],
+            recentIssues: [
+                {
+                    id: 'QI001',
+                    title: 'GPU não detectada em teste de hardware',
+                    severity: 'high',
+                    status: 'resolved',
+                    reportedAt: '2024-12-15T08:30:00Z',
+                    resolvedAt: '2024-12-15T14:20:00Z'
+                },
+                {
+                    id: 'QI002',
+                    title: 'Falha em teste de stress de CPU',
+                    severity: 'medium',
+                    status: 'in_progress',
+                    reportedAt: '2024-12-16T10:15:00Z'
+                }
+            ]
+        };
+        
+        res.json(qualityMetrics);
+    } catch (error) {
+        console.error('❌ Erro ao buscar métricas de qualidade:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// GET /api/orders/:id - Buscar pedido específico (DEVE VIR POR ÚLTIMO)
+router.get('/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = orders.find(o => o.id === id);
+        
+        if (!order) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+        
+        res.json(order);
+    } catch (error) {
+        console.error('Erro ao buscar pedido:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
 });
 
 export default router; 

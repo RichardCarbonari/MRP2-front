@@ -75,10 +75,17 @@ export default function QualityAdmin() {
         try {
             setError(null);
             
+            // Obter token de autenticação
+            const token = localStorage.getItem('token');
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+            
             // Carregar relatórios e métricas em paralelo
             const [reportsResponse, metricsResponse] = await Promise.all([
-                fetch('/api/quality/reports'),
-                fetch('/api/quality/metrics')
+                fetch('/api/orders/quality/reports', { headers }),
+                fetch('/api/orders/quality/metrics', { headers })
             ]);
 
             if (!reportsResponse.ok || !metricsResponse.ok) {
@@ -134,7 +141,7 @@ export default function QualityAdmin() {
 
         setSubmitting(true);
         try {
-            const response = await fetch(`/api/quality/reports/${selectedReport.id}/resolve`, {
+            const response = await fetch(`/api/orders/quality/reports/${selectedReport.id}/resolve`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
