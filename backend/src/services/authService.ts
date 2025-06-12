@@ -141,6 +141,42 @@ const authService = {
       message: 'Senha alterada com sucesso',
       timestamp: new Date().toISOString()
     };
+  },
+
+  changePassword: async (userId: string, currentPassword: string, newPassword: string) => {
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    // Verificar se a senha atual está correta
+    const validPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!validPassword) {
+      throw new Error('Senha atual incorreta');
+    }
+
+    // Verificar se a nova senha é diferente da atual
+    const samePassword = await bcrypt.compare(newPassword, user.password);
+    if (samePassword) {
+      throw new Error('Nova senha deve ser diferente da atual');
+    }
+
+    // Hash da nova senha
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Atualizar senha no banco
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    return {
+      message: 'Senha alterada com sucesso',
+      timestamp: new Date().toISOString()
+    };
   }
 };
 

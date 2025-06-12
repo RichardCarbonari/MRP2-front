@@ -39,76 +39,29 @@ import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import ptBR from 'date-fns/locale/pt-BR';
 import { ordersService, CPUOrder, CPUType } from '../../services/api';
 
-// Tipos de CPU pré-definidos
-const cpuTypes = {
-    'gaming-basic': {
-        name: 'Gaming Básico',
-        price: 2500,
-        specs: {
-            processor: 'Intel Core i5-13400F',
-            motherboard: 'ASUS TUF B660M-PLUS WiFi D4',
-            ram: 'Corsair Vengeance LPX 16GB DDR4',
-            storage: 'Kingston NV2 1TB NVMe',
-            gpu: 'NVIDIA GeForce RTX 3060 12GB',
-            powerSupply: 'Corsair CV550 550W 80 Plus Bronze',
-            case: 'Cooler Master Q300L'
-        }
-    },
-    'gaming-advanced': {
-        name: 'Gaming Avançado',
-        price: 4200,
-        specs: {
-            processor: 'Intel Core i7-13700F',
-            motherboard: 'ASUS ROG STRIX B660-F GAMING WiFi',
-            ram: 'Corsair Vengeance LPX 32GB DDR4',
-            storage: 'Samsung 980 PRO 2TB NVMe',
-            gpu: 'NVIDIA GeForce RTX 4070 Ti',
-            powerSupply: 'Corsair RM750x 750W 80 Plus Gold',
-            case: 'NZXT H5 Flow'
-        }
-    },
-    'workstation': {
-        name: 'Workstation',
-        price: 3800,
-        specs: {
-            processor: 'Intel Core i7-13700',
-            motherboard: 'ASUS ProArt B660-CREATOR D4',
-            ram: 'Corsair Vengeance LPX 64GB DDR4',
-            storage: 'Samsung 980 PRO 1TB NVMe',
-            gpu: 'NVIDIA RTX A4000',
-            powerSupply: 'Corsair RM850x 850W 80 Plus Gold',
-            case: 'Fractal Design Define 7'
-        }
-    },
-    'office': {
-        name: 'Office/Corporativo',
-        price: 1800,
-        specs: {
-            processor: 'Intel Core i5-13400',
-            motherboard: 'ASUS PRIME B660M-A D4',
-            ram: 'Corsair Vengeance LPX 16GB DDR4',
-            storage: 'Kingston NV2 512GB NVMe',
-            powerSupply: 'Corsair CV450 450W 80 Plus Bronze',
-            case: 'Cooler Master MasterBox Q300L'
-        }
-    },
-    'budget': {
-        name: 'Entrada/Budget',
-        price: 1200,
-        specs: {
-            processor: 'Intel Core i3-13100',
-            motherboard: 'ASUS PRIME H610M-E D4',
-            ram: 'Kingston FURY Beast 8GB DDR4',
-            storage: 'Kingston NV2 256GB NVMe',
-            powerSupply: 'Corsair CV350 350W',
-            case: 'Cooler Master MasterBox Q300L'
-        }
-    }
-};
+// Interface para CPU personalizada
+interface CustomCPU {
+    id: string;
+    name: string;
+    type: string;
+    price: number;
+    specs: {
+        processor: string;
+        motherboard: string;
+        ram: string;
+        storage: string;
+        gpu?: string;
+        powerSupply: string;
+        case: string;
+    };
+    status: 'active' | 'inactive';
+    createdAt: string;
+}
 
 export default function Planning() {
     const [orders, setOrders] = useState<CPUOrder[]>([]);
     const [cpuTypes, setCpuTypes] = useState<Record<string, CPUType>>({});
+    const [customCPUs, setCustomCPUs] = useState<CustomCPU[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
@@ -117,6 +70,14 @@ export default function Planning() {
     const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; order: CPUOrder | null }>({
         open: false,
         order: null
+    });
+    
+    // Estados para gerenciar CPUs
+    const [openCpuDialog, setOpenCpuDialog] = useState(false);
+    const [selectedCpu, setSelectedCpu] = useState<CustomCPU | null>(null);
+    const [deleteCpuDialog, setDeleteCpuDialog] = useState<{ open: boolean; cpu: CustomCPU | null }>({
+        open: false,
+        cpu: null
     });
 
     // Carregar dados do backend
@@ -130,6 +91,27 @@ export default function Planning() {
                 ]);
                 setOrders(ordersData);
                 setCpuTypes(cpuTypesData);
+                
+                // Converter CPUs do backend para o formato CustomCPU
+                const existingCPUs: CustomCPU[] = Object.entries(cpuTypesData).map(([key, cpu]) => ({
+                    id: key,
+                    name: cpu.name,
+                    type: key,
+                    price: cpu.price,
+                    specs: {
+                        processor: cpu.specs.processor,
+                        motherboard: cpu.specs.motherboard,
+                        ram: cpu.specs.ram,
+                        storage: cpu.specs.storage,
+                        gpu: cpu.specs.gpu || '',
+                        powerSupply: cpu.specs.powerSupply,
+                        case: cpu.specs.case
+                    },
+                    status: 'active' as const,
+                    createdAt: new Date().toISOString()
+                }));
+
+                setCustomCPUs(existingCPUs);
             } catch (err) {
                 console.error('Erro ao carregar dados:', err);
                 setError('Erro ao carregar dados dos pedidos');
@@ -160,12 +142,15 @@ export default function Planning() {
     const handleDeleteConfirm = async () => {
         if (deleteDialog.order) {
             try {
+                console.log('Deletando pedido:', deleteDialog.order.id);
                 await ordersService.deleteOrder(deleteDialog.order.id);
+                console.log('Pedido deletado com sucesso');
                 setOrders(prevOrders => prevOrders.filter(order => order.id !== deleteDialog.order!.id));
                 setDeleteDialog({ open: false, order: null });
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Erro ao deletar pedido:', error);
-                setError('Erro ao deletar pedido');
+                console.error('Detalhes do erro:', error.response?.data);
+                setError(`Erro ao deletar pedido: ${error.response?.data?.message || error.message || 'Erro desconhecido'}`);
             }
         }
     };
@@ -185,14 +170,18 @@ export default function Planning() {
             cpuType: formData.get('cpuType') as string,
             quantity: parseInt(formData.get('quantity') as string),
             deliveryDate: formData.get('deliveryDate') as string,
-            priority: formData.get('priority') as string,
+            priority: formData.get('priority') as 'high' | 'medium' | 'low',
             notes: formData.get('notes') as string,
         };
+
+        console.log('Salvando pedido:', { selectedOrder: selectedOrder?.id, orderData });
 
         try {
             if (selectedOrder) {
                 // Editar pedido existente
+                console.log('Atualizando pedido existente:', selectedOrder.id);
                 const updatedOrder = await ordersService.updateOrder(selectedOrder.id, orderData);
+                console.log('Pedido atualizado com sucesso:', updatedOrder);
                 setOrders(prevOrders => 
                     prevOrders.map(order => 
                         order.id === selectedOrder.id ? updatedOrder : order
@@ -200,15 +189,18 @@ export default function Planning() {
                 );
             } else {
                 // Criar novo pedido
+                console.log('Criando novo pedido');
                 const newOrder = await ordersService.createOrder(orderData);
+                console.log('Pedido criado com sucesso:', newOrder);
                 setOrders(prevOrders => [...prevOrders, newOrder]);
             }
             setOpenDialog(false);
             setSelectedOrder(null);
             setSelectedCpuType('');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar pedido:', error);
-            setError('Erro ao salvar pedido');
+            console.error('Detalhes do erro:', error.response?.data);
+            setError(`Erro ao salvar pedido: ${error.response?.data?.message || error.message || 'Erro desconhecido'}`);
         }
     };
 
@@ -261,6 +253,76 @@ export default function Planning() {
 
     const handleCpuTypeChange = (cpuType: string) => {
         setSelectedCpuType(cpuType);
+    };
+
+    // Funções para gerenciar CPUs
+    const handleAddCpu = () => {
+        setSelectedCpu(null);
+        setOpenCpuDialog(true);
+    };
+
+    const handleEditCpu = (cpu: CustomCPU) => {
+        setSelectedCpu(cpu);
+        setOpenCpuDialog(true);
+    };
+
+    const handleDeleteCpuClick = (cpu: CustomCPU) => {
+        setDeleteCpuDialog({ open: true, cpu });
+    };
+
+    const handleDeleteCpuConfirm = async () => {
+        if (deleteCpuDialog.cpu) {
+            try {
+                setCustomCPUs(prevCpus => prevCpus.filter(cpu => cpu.id !== deleteCpuDialog.cpu!.id));
+                setDeleteCpuDialog({ open: false, cpu: null });
+            } catch (error: any) {
+                console.error('Erro ao deletar CPU:', error);
+                setError(`Erro ao deletar CPU: ${error.message || 'Erro desconhecido'}`);
+            }
+        }
+    };
+
+    const handleDeleteCpuCancel = () => {
+        setDeleteCpuDialog({ open: false, cpu: null });
+    };
+
+    const handleCpuSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        
+        const cpuData: CustomCPU = {
+            id: selectedCpu?.id || `cpu-${Date.now()}`,
+            name: formData.get('name') as string,
+            type: formData.get('type') as string,
+            price: parseFloat(formData.get('price') as string),
+            specs: {
+                processor: formData.get('processor') as string,
+                motherboard: formData.get('motherboard') as string,
+                ram: formData.get('ram') as string,
+                storage: formData.get('storage') as string,
+                gpu: formData.get('gpu') as string,
+                powerSupply: formData.get('powerSupply') as string,
+                case: formData.get('case') as string,
+            },
+            status: (formData.get('status') as 'active' | 'inactive') || 'active',
+            createdAt: selectedCpu?.createdAt || new Date().toISOString()
+        };
+
+        try {
+            if (selectedCpu) {
+                // Editar CPU existente
+                setCustomCPUs(prevCpus => 
+                    prevCpus.map(cpu => cpu.id === selectedCpu.id ? cpuData : cpu)
+                );
+            } else {
+                // Adicionar nova CPU
+                setCustomCPUs(prevCpus => [...prevCpus, cpuData]);
+            }
+            setOpenCpuDialog(false);
+        } catch (error: any) {
+            console.error('Erro ao salvar CPU:', error);
+            setError(`Erro ao salvar CPU: ${error.message || 'Erro desconhecido'}`);
+        }
     };
 
     if (loading) {
@@ -543,6 +605,9 @@ export default function Planning() {
                                     type="number"
                                     defaultValue={selectedOrder?.quantity || 1}
                                     required
+                                    InputProps={{
+                                        inputProps: { min: 1, step: 1 }
+                                    }}
                                 />
                             </Grid>
                             
@@ -640,6 +705,520 @@ export default function Planning() {
                         </Button>
                     </DialogActions>
                 </form>
+            </Dialog>
+
+            {/* Tabela de CPUs Disponíveis */}
+            <Paper sx={{ p: 3, mb: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#2E7D32', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        🖥️ Gerenciar CPUs
+                        <Chip 
+                            label={`${Object.keys(cpuTypes).length} produtos`} 
+                            size="small" 
+                            sx={{ ml: 2, backgroundColor: '#e8f5e8', color: '#2E7D32' }}
+                        />
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={handleAddCpu}
+                        sx={{ 
+                            backgroundColor: '#2E7D32',
+                            '&:hover': { backgroundColor: '#18a449' },
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        Adicionar CPU
+                    </Button>
+                </Box>
+
+                <TableContainer sx={{ borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                    <Table>
+                        <TableHead>
+                            <TableRow sx={{ backgroundColor: '#f8f9fa' }}>
+                                <TableCell sx={{ fontWeight: 'bold', color: '#2E7D32' }}>Produto</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', color: '#2E7D32' }}>Categoria</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>Preço</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', color: '#2E7D32' }}>Especificações</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>Stock</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>Status</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>Ações</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {Object.entries(cpuTypes).map(([id, cpu]) => (
+                                <TableRow 
+                                    key={id} 
+                                    sx={{ 
+                                        '&:nth-of-type(odd)': { backgroundColor: '#fafafa' },
+                                        '&:hover': { 
+                                            backgroundColor: '#e8f5e8',
+                                            transition: 'background-color 0.2s'
+                                        }
+                                    }}
+                                >
+                                    <TableCell>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Box sx={{ 
+                                                width: 40, 
+                                                height: 40, 
+                                                borderRadius: 2, 
+                                                backgroundColor: '#e8f5e8',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <ComputerIcon sx={{ color: '#2E7D32' }} />
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                                    {cpu.name}
+                                                </Typography>
+                                                <Typography variant="caption" color="textSecondary">
+                                                    ID: {id.slice(0, 8)}...
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            label="CPU Desktop"
+                                            size="small"
+                                            sx={{ 
+                                                backgroundColor: '#e3f2fd',
+                                                color: '#1976d2',
+                                                fontWeight: 'medium'
+                                            }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
+                                            {formatCurrency(cpu.price)}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Box sx={{ maxWidth: 300 }}>
+                                            {cpu.specs && (
+                                                <Box>
+                                                    {cpu.specs.cores && (
+                                                        <Typography variant="caption" sx={{ display: 'block' }}>
+                                                            🔧 {cpu.specs.cores} cores / {cpu.specs.threads} threads
+                                                        </Typography>
+                                                    )}
+                                                    {cpu.specs.baseClock && (
+                                                        <Typography variant="caption" sx={{ display: 'block' }}>
+                                                            ⚡ Base: {cpu.specs.baseClock} | Boost: {cpu.specs.boostClock}
+                                                        </Typography>
+                                                    )}
+                                                    {cpu.specs.socket && (
+                                                        <Typography variant="caption" sx={{ display: 'block' }}>
+                                                            🔌 Socket: {cpu.specs.socket} | TDP: {cpu.specs.tdp}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Chip
+                                            label="Em estoque"
+                                            size="small"
+                                            color="success"
+                                            sx={{ fontWeight: 'medium' }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Chip
+                                            label="Ativo"
+                                            size="small"
+                                            color="success"
+                                            sx={{ fontWeight: 'medium' }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                                            <IconButton
+                                                size="small"
+                                                sx={{ 
+                                                    color: '#2E7D32',
+                                                    '&:hover': { backgroundColor: '#e8f5e8' }
+                                                }}
+                                                title="Visualizar detalhes"
+                                            >
+                                                <VisibilityIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleEditCpu({
+                                                    id,
+                                                    name: cpu.name,
+                                                    type: 'CPU',
+                                                    price: cpu.price,
+                                                    specs: cpu.specs as any,
+                                                    status: 'active',
+                                                    createdAt: new Date().toISOString()
+                                                })}
+                                                sx={{ 
+                                                    color: '#1976d2',
+                                                    '&:hover': { backgroundColor: '#e3f2fd' }
+                                                }}
+                                                title="Editar CPU"
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleDeleteCpuClick({
+                                                    id,
+                                                    name: cpu.name,
+                                                    type: 'CPU',
+                                                    price: cpu.price,
+                                                    specs: cpu.specs as any,
+                                                    status: 'active',
+                                                    createdAt: new Date().toISOString()
+                                                })}
+                                                sx={{ 
+                                                    color: '#d32f2f',
+                                                    '&:hover': { backgroundColor: '#ffebee' }
+                                                }}
+                                                title="Remover CPU"
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+
+                {Object.keys(cpuTypes).length === 0 && (
+                    <Box sx={{ 
+                        textAlign: 'center', 
+                        py: 6,
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: 2,
+                        border: '2px dashed #e0e0e0'
+                    }}>
+                        <ComputerIcon sx={{ fontSize: 64, color: '#bdbdbd', mb: 2 }} />
+                        <Typography variant="h6" color="textSecondary" sx={{ mb: 1 }}>
+                            Nenhuma CPU cadastrada
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+                            Adicione CPUs ao catálogo para começar a criar pedidos
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={handleAddCpu}
+                            sx={{ 
+                                backgroundColor: '#2E7D32',
+                                '&:hover': { backgroundColor: '#18a449' }
+                            }}
+                        >
+                            Adicionar Primeira CPU
+                        </Button>
+                    </Box>
+                )}
+            </Paper>
+
+            {/* Dialog para CPU */}
+            <Dialog 
+                open={openCpuDialog} 
+                onClose={() => setOpenCpuDialog(false)}
+                maxWidth="lg"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderTop: '4px solid #2E7D32',
+                        borderRadius: 2
+                    }
+                }}
+            >
+                <form onSubmit={handleCpuSubmit}>
+                    <DialogTitle sx={{ 
+                        color: '#2E7D32', 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        backgroundColor: '#f8f9fa',
+                        borderBottom: '1px solid #e0e0e0'
+                    }}>
+                        <ComputerIcon sx={{ mr: 1 }} />
+                        {selectedCpu ? 'Editar Produto CPU' : 'Adicionar Nova CPU ao Catálogo'}
+                    </DialogTitle>
+                    <DialogContent sx={{ p: 4 }}>
+                        <Grid container spacing={3} sx={{ mt: 1 }}>
+                            {/* Informações Básicas */}
+                            <Grid item xs={12}>
+                                <Typography variant="h6" sx={{ mb: 2, color: '#2E7D32', display: 'flex', alignItems: 'center' }}>
+                                    📋 Informações Básicas
+                                </Typography>
+                            </Grid>
+                            
+                            <Grid item xs={12} md={8}>
+                                <TextField
+                                    fullWidth
+                                    label="Nome do Produto"
+                                    name="name"
+                                    defaultValue={selectedCpu?.name}
+                                    required
+                                    placeholder="Ex: Intel Core i9-13900K"
+                                    sx={{ mb: 2 }}
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={4}>
+                                <TextField
+                                    fullWidth
+                                    label="Preço (R$)"
+                                    name="price"
+                                    type="number"
+                                    defaultValue={selectedCpu?.price}
+                                    required
+                                    InputProps={{
+                                        startAdornment: 'R$ ',
+                                        inputProps: { min: 0, step: 0.01 }
+                                    }}
+                                    sx={{ mb: 2 }}
+                                />
+                            </Grid>
+                            
+                            {/* Especificações Técnicas */}
+                            <Grid item xs={12}>
+                                <Divider sx={{ my: 2 }} />
+                                <Typography variant="h6" sx={{ mb: 2, color: '#2E7D32', display: 'flex', alignItems: 'center' }}>
+                                    🔧 Especificações Técnicas
+                                </Typography>
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Cores"
+                                    name="cores"
+                                    defaultValue={selectedCpu?.specs?.cores || ''}
+                                    placeholder="Ex: 24"
+                                    type="number"
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Threads"
+                                    name="threads"
+                                    defaultValue={selectedCpu?.specs?.threads || ''}
+                                    placeholder="Ex: 32"
+                                    type="number"
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Clock Base"
+                                    name="baseClock"
+                                    defaultValue={selectedCpu?.specs?.baseClock || ''}
+                                    placeholder="Ex: 3.0 GHz"
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Clock Boost"
+                                    name="boostClock"
+                                    defaultValue={selectedCpu?.specs?.boostClock || ''}
+                                    placeholder="Ex: 5.8 GHz"
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Socket"
+                                    name="socket"
+                                    defaultValue={selectedCpu?.specs?.socket || ''}
+                                    placeholder="Ex: LGA1700"
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="TDP"
+                                    name="tdp"
+                                    defaultValue={selectedCpu?.specs?.tdp || ''}
+                                    placeholder="Ex: 125W"
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Cache L3"
+                                    name="cache"
+                                    defaultValue={selectedCpu?.specs?.cache || ''}
+                                    placeholder="Ex: 36 MB"
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Arquitetura"
+                                    name="architecture"
+                                    defaultValue={selectedCpu?.specs?.architecture || ''}
+                                    placeholder="Ex: Raptor Lake"
+                                />
+                            </Grid>
+                            
+                            {/* Compatibilidade */}
+                            <Grid item xs={12}>
+                                <Divider sx={{ my: 2 }} />
+                                <Typography variant="h6" sx={{ mb: 2, color: '#2E7D32', display: 'flex', alignItems: 'center' }}>
+                                    🔌 Compatibilidade
+                                </Typography>
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Memória Suportada"
+                                    name="memorySupport"
+                                    defaultValue={selectedCpu?.specs?.memorySupport || ''}
+                                    placeholder="Ex: DDR4-3200, DDR5-5600"
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Gráficos Integrados"
+                                    name="integratedGraphics"
+                                    defaultValue={selectedCpu?.specs?.integratedGraphics || ''}
+                                    placeholder="Ex: Intel UHD Graphics 770"
+                                />
+                            </Grid>
+                            
+                            {/* Status e Categoria */}
+                            <Grid item xs={12}>
+                                <Divider sx={{ my: 2 }} />
+                                <Typography variant="h6" sx={{ mb: 2, color: '#2E7D32', display: 'flex', alignItems: 'center' }}>
+                                    ⚙️ Configurações
+                                </Typography>
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Status</InputLabel>
+                                    <Select
+                                        defaultValue={selectedCpu?.status || 'active'}
+                                        label="Status"
+                                        name="status"
+                                    >
+                                        <MenuItem value="active">
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#4caf50' }} />
+                                                Ativo
+                                            </Box>
+                                        </MenuItem>
+                                        <MenuItem value="inactive">
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f44336' }} />
+                                                Inativo
+                                            </Box>
+                                        </MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Categoria</InputLabel>
+                                    <Select
+                                        defaultValue="desktop"
+                                        label="Categoria"
+                                        name="category"
+                                    >
+                                        <MenuItem value="desktop">CPU Desktop</MenuItem>
+                                        <MenuItem value="server">CPU Servidor</MenuItem>
+                                        <MenuItem value="mobile">CPU Mobile</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        </Grid>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 3, backgroundColor: '#f8f9fa', borderTop: '1px solid #e0e0e0' }}>
+                        <Button 
+                            onClick={() => setOpenCpuDialog(false)} 
+                            type="button"
+                            sx={{ 
+                                color: '#666',
+                                '&:hover': { backgroundColor: '#f0f0f0' }
+                            }}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            sx={{ 
+                                backgroundColor: '#2E7D32',
+                                '&:hover': { backgroundColor: '#18a449' },
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 'bold',
+                                px: 3
+                            }}
+                        >
+                            {selectedCpu ? '💾 Salvar Alterações' : '➕ Adicionar CPU'}
+                        </Button>
+                    </DialogActions>
+                </form>
+            </Dialog>
+
+            {/* Dialog de confirmação de delete CPU */}
+            <Dialog
+                open={deleteCpuDialog.open}
+                onClose={handleDeleteCpuCancel}
+                PaperProps={{
+                    sx: {
+                        borderTop: '4px solid #D32F2F'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ color: '#D32F2F', display: 'flex', alignItems: 'center' }}>
+                    <DeleteIcon sx={{ mr: 1 }} />
+                    Confirmar Exclusão da CPU
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1">
+                        Tem certeza que deseja excluir a CPU:
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 'bold', mt: 1, color: '#D32F2F' }}>
+                        {deleteCpuDialog.cpu?.name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+                        Esta ação não pode ser desfeita.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteCpuCancel}>
+                        Cancelar
+                    </Button>
+                    <Button 
+                        onClick={handleDeleteCpuConfirm}
+                        variant="contained" 
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                    >
+                        Excluir
+                    </Button>
+                </DialogActions>
             </Dialog>
 
             {/* Dialog de confirmação de delete */}

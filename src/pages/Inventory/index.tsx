@@ -149,10 +149,14 @@ export default function Inventory() {
             location: formData.get('location') as string,
         };
 
+        console.log('Salvando item:', { selectedItem: selectedItem?.id, itemData });
+
         try {
             if (selectedItem) {
                 // Editar item existente
+                console.log('Atualizando item existente:', selectedItem.id);
                 const updatedItem = await inventoryService.updateItem(selectedItem.id, itemData);
+                console.log('Item atualizado com sucesso:', updatedItem);
                 setItems(prevItems => 
                     prevItems.map(item => 
                         item.id === selectedItem.id ? updatedItem : item
@@ -160,14 +164,17 @@ export default function Inventory() {
                 );
             } else {
                 // Criar novo item
+                console.log('Criando novo item');
                 const newItem = await inventoryService.createItem(itemData);
+                console.log('Item criado com sucesso:', newItem);
                 setItems(prevItems => [...prevItems, newItem]);
             }
             setOpenDialog(false);
             setSelectedItem(null);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar item:', error);
-            setError('Erro ao salvar item');
+            console.error('Detalhes do erro:', error.response?.data);
+            setError(`Erro ao salvar item: ${error.response?.data?.message || error.message || 'Erro desconhecido'}`);
         }
     };
 
@@ -184,10 +191,14 @@ export default function Inventory() {
             location: formData.get('location') as string,
         };
 
+        console.log('Salvando ferramenta:', { selectedTool: selectedTool?.id, toolData });
+
         try {
             if (selectedTool) {
                 // Editar ferramenta existente
+                console.log('Atualizando ferramenta existente:', selectedTool.id);
                 const updatedTool = await inventoryService.updateTool(selectedTool.id, toolData);
+                console.log('Ferramenta atualizada com sucesso:', updatedTool);
                 setTools(prevTools => 
                     prevTools.map(tool => 
                         tool.id === selectedTool.id ? updatedTool : tool
@@ -195,14 +206,17 @@ export default function Inventory() {
                 );
             } else {
                 // Criar nova ferramenta
+                console.log('Criando nova ferramenta');
                 const newTool = await inventoryService.createTool(toolData);
+                console.log('Ferramenta criada com sucesso:', newTool);
                 setTools(prevTools => [...prevTools, newTool]);
             }
             setToolDialog(false);
             setSelectedTool(null);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar ferramenta:', error);
-            setError('Erro ao salvar ferramenta');
+            console.error('Detalhes do erro:', error.response?.data);
+            setError(`Erro ao salvar ferramenta: ${error.response?.data?.message || error.message || 'Erro desconhecido'}`);
         }
     };
 
@@ -620,6 +634,9 @@ export default function Inventory() {
                                         defaultValue={selectedItem?.quantity}
                                         variant="outlined"
                                         required
+                                        InputProps={{
+                                            inputProps: { min: 0, step: 1 }
+                                        }}
                                     />
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
@@ -762,6 +779,9 @@ export default function Inventory() {
                                         defaultValue={selectedTool?.quantity}
                                         variant="outlined"
                                         required
+                                        InputProps={{
+                                            inputProps: { min: 0, step: 1 }
+                                        }}
                                     />
                                 </Grid>
                             </Grid>

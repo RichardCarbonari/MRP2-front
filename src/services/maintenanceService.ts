@@ -19,13 +19,35 @@ api.interceptors.request.use(
     console.log('🔑 Token encontrado:', token ? 'SIM' : 'NÃO');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 Token adicionado ao header');
+      console.log('🔑 Token adicionado ao header:', config.headers.Authorization);
     }
     console.log('📡 Fazendo requisição para:', config.url);
     return config;
   },
   (error) => {
     console.error('❌ Erro no interceptor:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para resposta
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ Resposta recebida:', response.status);
+    return response;
+  },
+  (error) => {
+    if (error.response) {
+      console.error('❌ Erro na resposta:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+      
+      if (error.response.status === 403) {
+        console.error('❌ Acesso negado: Verifique se você tem permissão de administrador');
+      }
+    }
     return Promise.reject(error);
   }
 );
@@ -234,6 +256,16 @@ const maintenanceService = {
         return 'check_circle';
       default:
         return 'help';
+    }
+  },
+
+  // Excluir solicitação concluída
+  deleteRequest: async (id: string): Promise<void> => {
+    try {
+      await api.delete(`/requests/${id}`);
+    } catch (error) {
+      handleApiError(error);
+      throw error;
     }
   }
 };

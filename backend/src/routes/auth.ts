@@ -120,4 +120,75 @@ router.put('/reset-password', async (req: Request, res: Response, next: NextFunc
   }
 });
 
+// Alterar senha (usuário logado)
+router.put('/change-password', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        error: 'Senha atual e nova senha são obrigatórias',
+        field: 'currentPassword'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        error: 'Nova senha deve ter pelo menos 6 caracteres',
+        field: 'newPassword'
+      });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        error: 'Nova senha deve ser diferente da atual',
+        field: 'newPassword'
+      });
+    }
+
+    // Obter token do header Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'Token de autenticação não fornecido',
+        field: 'currentPassword'
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    try {
+      const decoded = authService.validateToken(token) as any;
+      const userId = decoded.userId;
+
+      const result = await authService.changePassword(userId, currentPassword, newPassword);
+      res.json(result);
+    } catch (tokenError: any) {
+      return res.status(401).json({
+        error: 'Token inválido ou expirado',
+        field: 'currentPassword'
+      });
+    }
+
+  } catch (error: any) {
+    console.error('❌ Erro ao alterar senha:', error);
+    
+    if (error.message === 'Senha atual incorreta') {
+      return res.status(400).json({
+        error: error.message,
+        field: 'currentPassword'
+      });
+    }
+    
+    if (error.message === 'Nova senha deve ser diferente da atual') {
+      return res.status(400).json({
+        error: error.message,
+        field: 'newPassword'
+      });
+    }
+    
+    next(error);
+  }
+});
+
 export default router; 

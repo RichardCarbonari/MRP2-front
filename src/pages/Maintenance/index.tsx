@@ -764,7 +764,8 @@ export default function Maintenance() {
                                         onChange={(e) => setNewMaintenance({ ...newMaintenance, cost: Number(e.target.value) })}
                                         required
                                         InputProps={{
-                                            startAdornment: 'R$'
+                                            startAdornment: 'R$',
+                                            inputProps: { min: 0, step: 0.01 }
                                         }}
                                     />
                                 </Grid>

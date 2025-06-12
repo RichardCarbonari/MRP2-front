@@ -1,3 +1,7 @@
+// 🗄️ CONFIGURAÇÃO DO BANCO DE DADOS
+// Este arquivo define toda a estrutura do banco de dados do sistema MRP2
+// Utiliza Prisma como ORM para facilitar operações e migrações
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,88 +11,181 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+// 👤 MODELO DE USUÁRIOS
+// Gerencia todos os usuários do sistema com diferentes níveis de acesso
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   // 'admin', 'employee', 'maintenance'
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String   @id @default(uuid()) // ID único gerado automaticamente
+  email     String   @unique              // Email único para login
+  password  String                        // Senha criptografada com bcrypt
+  name      String                        // Nome completo do usuário
+  role      String                        // Papel: 'admin', 'employee', 'maintenance'
+  createdAt DateTime @default(now())      // Data de criação do usuário
+  updatedAt DateTime @updatedAt           // Data da última atualização
+
+  // 🔗 RELACIONAMENTOS
+  // Solicitações de manutenção criadas pelo usuário
   maintenanceRequests MaintenanceRequest[]
+  
+  // Solicitações de manutenção atribuídas ao usuário (para técnicos)
+  assignedMaintenanceRequests MaintenanceRequest[] @relation("AssignedMaintenance")
+  
+  // Relatórios de qualidade criados pelo usuário
+  qualityReports QualityReport[]
+  
+  // Pedidos criados pelo usuário
   orders    Order[]
 
-  @@map("users")
+  @@map("users") // Nome da tabela no banco
 }
 
+// 🔧 MODELO DE SOLICITAÇÕES DE MANUTENÇÃO
+// Gerencia todas as solicitações de manutenção de equipamentos
 model MaintenanceRequest {
-  id          String   @id @default(uuid())
-  equipment   String
-  description String
-  priority    String
-  status      String
-  requestedBy String
-  requestedAt DateTime
-  department  String
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [requestedBy], references: [id])
+  id          String   @id @default(uuid()) // ID único da solicitação
+  equipment   String                        // Nome/tipo do equipamento
+  description String                        // Descrição detalhada do problema
+  priority    String                        // Prioridade: 'high', 'medium', 'low'
+  status      String                        // Status: 'pending', 'in_progress', 'completed'
+  requestedBy String                        // ID do usuário que fez a solicitação
+  requestedAt DateTime                      // Data/hora da solicitação
+  department  String                        // Departamento onde está o equipamento
+  updatedAt   DateTime @updatedAt           // Data da última atualização
+  
+  // 🔧 CAMPOS ESPECÍFICOS PARA TÉCNICOS
+  assignedTo  String?  // ID do técnico responsável (opcional)
+  notes       String?  // Observações do técnico durante o atendimento
+  solution    String?  // Descrição da solução aplicada
+  completedAt DateTime? // Data/hora de conclusão do serviço
 
-  @@map("maintenance_requests")
+  // 🔗 RELACIONAMENTOS
+  // Usuário que criou a solicitação
+  user        User     @relation(fields: [requestedBy], references: [id])
+  
+  // Técnico responsável pela manutenção (opcional)
+  assignedUser User?   @relation("AssignedMaintenance", fields: [assignedTo], references: [id])
+
+  @@map("maintenance_requests") // Nome da tabela no banco
 }
 
-// 💻 PRODUTOS - Catálogo de produtos disponíveis
+// 💻 MODELO DE PRODUTOS
+// Catálogo completo de produtos disponíveis para venda
 model Product {
-  id          String    @id @default(uuid())
-  name        String
-  category    String    // 'CPU', 'CPU_Servidor', 'Placa de Vídeo', etc.
-  subcategory String?   // 'Gaming', 'Office', 'Server', etc.
-  brand       String
-  price       Float
-  cost        Float     // Custo de aquisição
-  description String?
-  specifications Json?   // Especificações técnicas em JSON
-  stock       Int       @default(0)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id          String    @id @default(uuid()) // ID único do produto
+  name        String                         // Nome comercial do produto
+  category    String                         // Categoria: 'CPU', 'CPU_Servidor', 'Placa de Vídeo', etc.
+  subcategory String?                        // Subcategoria: 'Gaming', 'Office', 'Server', etc.
+  brand       String                         // Marca do produto (Intel, AMD, NVIDIA, etc.)
+  price       Float                          // Preço de venda ao cliente
+  cost        Float                          // Custo de aquisição/produção
+  description String?                        // Descrição detalhada do produto
+  
+  // 📊 ESPECIFICAÇÕES TÉCNICAS
+  // Armazenadas em formato JSON para flexibilidade
+  // Exemplo para CPU: { cores: 24, threads: 32, baseClock: "3.0 GHz", socket: "LGA1700" }
+  specifications Json?
+  
+  // 📦 CONTROLE DE ESTOQUE
+  stock       Int       @default(0)          // Quantidade em estoque
+  isActive    Boolean   @default(true)       // Produto ativo/inativo no catálogo
+  
+  // 📅 TIMESTAMPS
+  createdAt   DateTime  @default(now())      // Data de criação do produto
+  updatedAt   DateTime  @updatedAt           // Data da última atualização
+  
+  // 🔗 RELACIONAMENTOS
+  // Itens de pedidos que incluem este produto
   orderItems  OrderItem[]
 
-  @@map("products")
+  @@map("products") // Nome da tabela no banco
 }
 
-// 📋 PEDIDOS - Vendas realizadas
+// 📋 MODELO DE PEDIDOS
+// Representa uma venda/pedido completo com informações do cliente
 model Order {
-  id          String      @id @default(uuid())
-  orderNumber String      @unique
-  customerName String
-  customerEmail String?
-  customerPhone String?
-  status      String      // 'pending', 'processing', 'testing', 'ready', 'delivered', 'cancelled'
-  totalAmount Float
-  totalCost   Float       // Custo total dos produtos
-  profitAmount Float      // Lucro do pedido
-  createdBy   String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deliveredAt DateTime?
+  id          String      @id @default(uuid()) // ID único do pedido
+  orderNumber String      @unique              // Número do pedido (ex: ORD-2024-001)
+  
+  // 👤 INFORMAÇÕES DO CLIENTE
+  customerName String                          // Nome completo do cliente
+  customerEmail String?                        // Email do cliente (opcional)
+  customerPhone String?                        // Telefone do cliente (opcional)
+  
+  // 📊 STATUS E CONTROLE
+  status      String                           // Status: 'pending', 'processing', 'testing', 'ready', 'delivered', 'cancelled'
+  
+  // 💰 CÁLCULOS FINANCEIROS
+  totalAmount Float                            // Valor total do pedido (preço de venda)
+  totalCost   Float                            // Custo total dos produtos
+  profitAmount Float                           // Lucro do pedido (totalAmount - totalCost)
+  
+  // 👨‍💼 CONTROLE ADMINISTRATIVO
+  createdBy   String                           // ID do usuário que criou o pedido
+  
+  // 📅 TIMESTAMPS
+  createdAt   DateTime    @default(now())      // Data de criação do pedido
+  updatedAt   DateTime    @updatedAt           // Data da última atualização
+  deliveredAt DateTime?                        // Data de entrega (quando aplicável)
+  
+  // 🔗 RELACIONAMENTOS
+  // Usuário que criou o pedido
   user        User        @relation(fields: [createdBy], references: [id])
+  
+  // Itens incluídos no pedido
   items       OrderItem[]
 
-  @@map("orders")
+  @@map("orders") // Nome da tabela no banco
 }
 
-// 📦 ITENS DO PEDIDO - Produtos vendidos em cada pedido
+// 📦 MODELO DE ITENS DO PEDIDO
+// Representa cada produto específico dentro de um pedido
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  unitPrice Float   // Preço de venda
-  unitCost  Float   // Custo do produto
-  subtotal  Float   // Preço total (quantity * unitPrice)
-  profit    Float   // Lucro do item (subtotal - (quantity * unitCost))
+  id        String  @id @default(uuid()) // ID único do item
+  orderId   String                       // ID do pedido pai
+  productId String                       // ID do produto
+  
+  // 📊 QUANTIDADES E PREÇOS
+  quantity  Int                          // Quantidade do produto
+  unitPrice Float                        // Preço unitário de venda
+  unitCost  Float                        // Custo unitário do produto
+  subtotal  Float                        // Preço total do item (quantity * unitPrice)
+  profit    Float                        // Lucro do item (subtotal - (quantity * unitCost))
+  
+  // 🔗 RELACIONAMENTOS
+  // Pedido ao qual este item pertence
+  // onDelete: Cascade = quando o pedido for deletado, os itens também são
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  // Produto referenciado neste item
   product   Product @relation(fields: [productId], references: [id])
 
-  @@map("order_items")
+  @@map("order_items") // Nome da tabela no banco
+}
+
+// 📊 MODELO DE RELATÓRIOS DE QUALIDADE
+// Sistema de controle de qualidade com relatórios e métricas
+model QualityReport {
+  id          String   @id @default(uuid()) // ID único do relatório
+  title       String                        // Título do relatório
+  type        String                        // Tipo: 'hardware', 'software', 'integration'
+  description String                        // Descrição detalhada do problema/observação
+  category    String                        // Categoria para classificação
+  status      String                        // Status: 'pending', 'in_progress', 'resolved'
+  
+  // 📝 DETALHES E RESOLUÇÃO
+  notes       String?                       // Observações adicionais
+  resolution  String?                       // Descrição da resolução aplicada
+  
+  // 👨‍💼 CONTROLE ADMINISTRATIVO
+  reportedBy  String                        // ID do usuário que criou o relatório
+  
+  // 📅 TIMESTAMPS
+  createdAt   DateTime @default(now())      // Data de criação do relatório
+  updatedAt   DateTime @updatedAt           // Data da última atualização
+  expiresAt   DateTime?                     // Data de expiração para auto-deleção (opcional)
+  
+  // 🔗 RELACIONAMENTOS
+  // Usuário que criou o relatório
+  user        User     @relation(fields: [reportedBy], references: [id])
+
+  @@map("quality_reports") // Nome da tabela no banco
 } 

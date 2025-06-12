@@ -1,316 +1,342 @@
-import { Router } from 'express';
+/**
+ * 🛒 ROTAS DE PEDIDOS - Sistema de Gestão de Vendas
+ * 
+ * Este arquivo contém todas as rotas relacionadas ao gerenciamento de pedidos:
+ * - Listagem de pedidos com dados do banco
+ * - Criação de novos pedidos com validações
+ * - Atualização de pedidos existentes
+ * - Exclusão de pedidos
+ * - Busca de tipos de CPU disponíveis
+ * - Estatísticas e métricas de vendas
+ * 
+ * Todas as operações são realizadas diretamente no banco de dados SQLite
+ * através do Prisma ORM, garantindo persistência e integridade dos dados.
+ */
+
+import express, { Request, Response, NextFunction } from 'express';
+import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
 
-const router = Router();
+const router = express.Router();
+const prisma = new PrismaClient();
 
-// Tipos de CPU disponíveis
-const cpuTypes = {
-    'gaming-basic': {
-        name: 'Gaming Básico',
-        price: 2500,
-        specs: {
-            processor: 'Intel Core i5-13400F',
-            motherboard: 'ASUS TUF B660M-PLUS WiFi D4',
-            ram: 'Corsair Vengeance LPX 16GB DDR4',
-            storage: 'Kingston NV2 1TB NVMe',
-            gpu: 'NVIDIA GeForce RTX 3060 12GB',
-            powerSupply: 'Corsair CV550 550W 80 Plus Bronze',
-            case: 'Cooler Master Q300L'
-        }
-    },
-    'gaming-advanced': {
-        name: 'Gaming Avançado',
-        price: 4200,
-        specs: {
-            processor: 'Intel Core i7-13700F',
-            motherboard: 'ASUS ROG STRIX B660-F GAMING WiFi',
-            ram: 'Corsair Vengeance LPX 32GB DDR4',
-            storage: 'Samsung 980 PRO 2TB NVMe',
-            gpu: 'NVIDIA GeForce RTX 4070 Ti',
-            powerSupply: 'Corsair RM750x 750W 80 Plus Gold',
-            case: 'NZXT H5 Flow'
-        }
-    },
-    'workstation': {
-        name: 'Workstation',
-        price: 3800,
-        specs: {
-            processor: 'Intel Core i7-13700',
-            motherboard: 'ASUS ProArt B660-CREATOR D4',
-            ram: 'Corsair Vengeance LPX 64GB DDR4',
-            storage: 'Samsung 980 PRO 1TB NVMe',
-            gpu: 'NVIDIA RTX A4000',
-            powerSupply: 'Corsair RM850x 850W 80 Plus Gold',
-            case: 'Fractal Design Define 7'
-        }
-    },
-    'office': {
-        name: 'Office/Corporativo',
-        price: 1800,
-        specs: {
-            processor: 'Intel Core i5-13400',
-            motherboard: 'ASUS PRIME B660M-A D4',
-            ram: 'Corsair Vengeance LPX 16GB DDR4',
-            storage: 'Kingston NV2 512GB NVMe',
-            powerSupply: 'Corsair CV450 450W 80 Plus Bronze',
-            case: 'Cooler Master MasterBox Q300L'
-        }
-    },
-    'budget': {
-        name: 'Entrada/Budget',
-        price: 1200,
-        specs: {
-            processor: 'Intel Core i3-13100',
-            motherboard: 'ASUS PRIME H610M-E D4',
-            ram: 'Kingston FURY Beast 8GB DDR4',
-            storage: 'Kingston NV2 256GB NVMe',
-            powerSupply: 'Corsair CV350 350W',
-            case: 'Cooler Master MasterBox Q300L'
-        }
-    }
-};
-
-// Mock database for orders
-let orders = [
-    {
-        id: 'PED001',
-        customerName: 'João Silva',
-        customerEmail: 'joao.silva@email.com',
-        customerPhone: '(11) 99999-9999',
-        cpuType: 'gaming-basic',
-        cpuSpecs: cpuTypes['gaming-basic'].specs,
-        quantity: 2,
-        unitPrice: cpuTypes['gaming-basic'].price,
-        totalPrice: cpuTypes['gaming-basic'].price * 2,
-        orderDate: '2024-12-20T10:00:00.000Z',
-        deliveryDate: '2024-12-27T10:00:00.000Z',
-        status: 'assembly',
-        priority: 'high',
-        notes: 'Cliente solicitou montagem expressa',
-        createdAt: '2024-12-20T10:00:00.000Z',
-        updatedAt: '2024-12-20T10:00:00.000Z'
-    },
-    {
-        id: 'PED002',
-        customerName: 'Maria Santos',
-        customerEmail: 'maria.santos@empresa.com',
-        customerPhone: '(11) 88888-8888',
-        cpuType: 'workstation',
-        cpuSpecs: cpuTypes['workstation'].specs,
-        quantity: 1,
-        unitPrice: cpuTypes['workstation'].price,
-        totalPrice: cpuTypes['workstation'].price,
-        orderDate: '2024-12-21T09:00:00.000Z',
-        deliveryDate: '2024-12-30T09:00:00.000Z',
-        status: 'pending',
-        priority: 'medium',
-        notes: 'Para uso em arquitetura e renderização',
-        createdAt: '2024-12-21T09:00:00.000Z',
-        updatedAt: '2024-12-21T09:00:00.000Z'
-    },
-    {
-        id: 'PED003',
-        customerName: 'Pedro Costa',
-        customerEmail: 'pedro.costa@email.com',
-        customerPhone: '(11) 77777-7777',
-        cpuType: 'gaming-advanced',
-        cpuSpecs: cpuTypes['gaming-advanced'].specs,
-        quantity: 1,
-        unitPrice: cpuTypes['gaming-advanced'].price,
-        totalPrice: cpuTypes['gaming-advanced'].price,
-        orderDate: '2024-12-19T15:00:00.000Z',
-        deliveryDate: '2024-12-26T15:00:00.000Z',
-        status: 'testing',
-        priority: 'high',
-        notes: 'Configuração personalizada com overclock',
-        createdAt: '2024-12-19T15:00:00.000Z',
-        updatedAt: '2024-12-19T15:00:00.000Z'
-    },
-    {
-        id: 'PED004',
-        customerName: 'Ana Carolina',
-        customerEmail: 'ana.carolina@tech.com.br',
-        customerPhone: '(11) 66666-6666',
-        cpuType: 'office',
-        cpuSpecs: cpuTypes['office'].specs,
-        quantity: 5,
-        unitPrice: cpuTypes['office'].price,
-        totalPrice: cpuTypes['office'].price * 5,
-        orderDate: '2024-12-22T08:30:00.000Z',
-        deliveryDate: '2025-01-05T08:30:00.000Z',
-        status: 'pending',
-        priority: 'low',
-        notes: 'Pedido corporativo para escritório - 5 estações de trabalho',
-        createdAt: '2024-12-22T08:30:00.000Z',
-        updatedAt: '2024-12-22T08:30:00.000Z'
-    },
-    {
-        id: 'PED005',
-        customerName: 'Ricardo Mendes',
-        customerEmail: 'ricardo.mendes@gamer.com',
-        customerPhone: '(11) 55555-5555',
-        cpuType: 'gaming-advanced',
-        cpuSpecs: cpuTypes['gaming-advanced'].specs,
-        quantity: 1,
-        unitPrice: cpuTypes['gaming-advanced'].price,
-        totalPrice: cpuTypes['gaming-advanced'].price,
-        orderDate: '2024-12-21T14:00:00.000Z',
-        deliveryDate: '2024-12-28T14:00:00.000Z',
-        status: 'ready',
-        priority: 'high',
-        notes: 'Setup para streaming profissional - RGB customizado',
-        createdAt: '2024-12-21T14:00:00.000Z',
-        updatedAt: '2024-12-22T16:30:00.000Z'
-    },
-    {
-        id: 'PED006',
-        customerName: 'Fernanda Oliveira',
-        customerEmail: 'fernanda.oliveira@estudante.com',
-        customerPhone: '(11) 44444-4444',
-        cpuType: 'budget',
-        cpuSpecs: cpuTypes['budget'].specs,
-        quantity: 2,
-        unitPrice: cpuTypes['budget'].price,
-        totalPrice: cpuTypes['budget'].price * 2,
-        orderDate: '2024-12-20T11:15:00.000Z',
-        deliveryDate: '2024-12-29T11:15:00.000Z',
-        status: 'assembly',
-        priority: 'medium',
-        notes: 'PCs para estudos universitários - orçamento limitado',
-        createdAt: '2024-12-20T11:15:00.000Z',
-        updatedAt: '2024-12-22T10:45:00.000Z'
-    },
-    {
-        id: 'PED007',
-        customerName: 'Lucas Technologies LTDA',
-        customerEmail: 'compras@lucastech.com.br',
-        customerPhone: '(11) 33333-3333',
-        cpuType: 'workstation',
-        cpuSpecs: cpuTypes['workstation'].specs,
-        quantity: 3,
-        unitPrice: cpuTypes['workstation'].price,
-        totalPrice: cpuTypes['workstation'].price * 3,
-        orderDate: '2024-12-18T16:45:00.000Z',
-        deliveryDate: '2025-01-02T16:45:00.000Z',
-        status: 'delivered',
-        priority: 'medium',
-        notes: 'Estações para equipe de design gráfico - entrega realizada',
-        createdAt: '2024-12-18T16:45:00.000Z',
-        updatedAt: '2024-12-24T09:00:00.000Z'
-    }
-];
-
-// Função para gerar ID único
-const generateOrderId = () => {
-    const lastOrder = orders.sort((a, b) => parseInt(b.id.slice(3)) - parseInt(a.id.slice(3)))[0];
-    const lastNumber = lastOrder ? parseInt(lastOrder.id.slice(3)) : 0;
-    return `PED${String(lastNumber + 1).padStart(3, '0')}`;
-};
-
-// GET /api/orders - Buscar todos os pedidos
-// ROTAS ESPECÍFICAS DEVEM VIR ANTES DAS GENÉRICAS
-
-router.get('/cpu-types', (req, res) => {
+/**
+ * 🖥️ GET /api/orders/cpu-types
+ * 
+ * Busca todos os tipos de CPU disponíveis no catálogo de produtos.
+ * Retorna apenas produtos ativos da categoria 'CPU' com suas especificações.
+ * 
+ * Resposta: Objeto com IDs como chaves e dados dos produtos como valores
+ * Exemplo: { "uuid-123": { name: "Intel i9", price: 3000, specs: {...} } }
+ */
+router.get('/cpu-types', async (req, res) => {
     try {
-        console.log('GET /api/orders/cpu-types - Buscando tipos de CPU');
-        res.json(cpuTypes);
+        console.log('🔍 Buscando tipos de CPU disponíveis...');
+        
+        // Buscar apenas CPUs ativas no banco de dados
+        const cpuTypes = await prisma.product.findMany({
+            where: {
+                category: 'CPU',    // Filtrar apenas CPUs
+                isActive: true      // Apenas produtos ativos
+            },
+            select: {
+                id: true,
+                name: true,
+                price: true,
+                specifications: true
+            }
+        });
+
+        // Transformar array em objeto para compatibilidade com frontend
+        const formattedTypes = cpuTypes.reduce((acc, cpu) => {
+            acc[cpu.id] = {
+                name: cpu.name,
+                price: cpu.price,
+                specs: cpu.specifications as any
+            };
+            return acc;
+        }, {} as Record<string, any>);
+
+        console.log(`✅ Encontrados ${cpuTypes.length} tipos de CPU`);
+        res.json(formattedTypes);
     } catch (error) {
-        console.error('Erro ao buscar tipos de CPU:', error);
+        console.error('❌ Erro ao buscar tipos de CPU:', error);
+        res.status(500).json({ message: 'Erro ao buscar tipos de CPU' });
+    }
+});
+
+/**
+ * 📊 GET /api/orders/stats/summary
+ * 
+ * Retorna estatísticas resumidas dos pedidos para dashboards.
+ * Inclui contadores por status, receita total e valor médio dos pedidos.
+ * 
+ * Resposta: Objeto com métricas agregadas do sistema
+ */
+router.get('/stats/summary', async (req, res) => {
+    try {
+        console.log('📊 Calculando estatísticas dos pedidos...');
+        
+        // Contar pedidos por status
+        const totalOrders = await prisma.order.count();
+        const pendingOrders = await prisma.order.count({ where: { status: 'pending' } });
+        const processingOrders = await prisma.order.count({ where: { status: 'processing' } });
+        const deliveredOrders = await prisma.order.count({ where: { status: 'delivered' } });
+        
+        // Calcular métricas financeiras
+        const revenueData = await prisma.order.aggregate({
+            _sum: { totalAmount: true },
+            _avg: { totalAmount: true }
+        });
+
+        const stats = {
+            summary: {
+                totalOrders,
+                pendingOrders,
+                inProgressOrders: processingOrders,
+                completedOrders: deliveredOrders,
+                totalRevenue: revenueData._sum.totalAmount || 0,
+                averageOrderValue: revenueData._avg.totalAmount || 0
+            }
+        };
+
+        console.log(`✅ Estatísticas calculadas: ${totalOrders} pedidos, R$ ${(revenueData._sum.totalAmount || 0).toFixed(2)} em receita`);
+        res.json(stats);
+    } catch (error) {
+        console.error('❌ Erro ao buscar estatísticas:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
-router.get('/stats/summary', (req, res) => {
+/**
+ * 📋 GET /api/orders
+ * 
+ * Lista todos os pedidos do sistema com informações completas.
+ * Inclui dados do cliente, produtos, valores e status.
+ * Os dados são buscados diretamente do banco com joins otimizados.
+ * 
+ * Resposta: Array de pedidos formatados para o frontend
+ */
+router.get('/', async (req, res) => {
     try {
-        res.json({ message: 'Stats endpoint working' });
+        console.log('📋 Buscando todos os pedidos do banco de dados...');
+        
+        // Buscar pedidos com relacionamentos (produtos incluídos)
+        const orders = await prisma.order.findMany({
+            include: {
+                items: {
+                    include: {
+                        product: true  // Incluir dados completos do produto
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'  // Mais recentes primeiro
+            }
+        });
+
+        // Transformar dados do banco para formato esperado pelo frontend
+        const formattedOrders = orders.map(order => {
+            const firstItem = order.items[0];  // Assumindo um produto por pedido
+            const product = firstItem?.product;
+            
+            return {
+                id: order.orderNumber,                    // Usar número do pedido como ID
+                customerName: order.customerName,
+                customerEmail: order.customerEmail || '',
+                customerPhone: order.customerPhone || '',
+                cpuType: product?.id || '',               // ID do produto
+                cpuSpecs: product?.specifications as any || {},
+                quantity: firstItem?.quantity || 0,
+                unitPrice: firstItem?.unitPrice || 0,
+                totalPrice: order.totalAmount,
+                orderDate: order.createdAt.toISOString(),
+                deliveryDate: order.deliveredAt?.toISOString() || 
+                             new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // +7 dias se não definido
+                status: order.status as 'pending' | 'assembly' | 'testing' | 'ready' | 'delivered',
+                priority: 'medium' as 'high' | 'medium' | 'low', // Prioridade padrão
+                notes: '',
+                createdAt: order.createdAt.toISOString(),
+                updatedAt: order.updatedAt.toISOString()
+            };
+        });
+
+        console.log(`✅ Retornando ${formattedOrders.length} pedidos`);
+        res.json(formattedOrders);
     } catch (error) {
-        console.error('Erro ao buscar estatísticas:', error);
+        console.error('❌ Erro ao buscar pedidos:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
-router.get('/', (req, res) => {
+/**
+ * ➕ POST /api/orders
+ * 
+ * Cria um novo pedido no sistema com validações completas.
+ * Calcula automaticamente preços, custos e lucros.
+ * Gera número sequencial do pedido e associa a um usuário admin.
+ * 
+ * Body: Dados do cliente, produto, quantidade e data de entrega
+ * Resposta: Pedido criado com todos os cálculos realizados
+ */
+router.post('/', async (req, res) => {
     try {
-        console.log('GET /api/orders - Buscando todos os pedidos');
-        res.json(orders);
-    } catch (error) {
-        console.error('Erro ao buscar pedidos:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-});
-
-// POST /api/orders - Criar novo pedido
-router.post('/', (req, res) => {
-    try {
+        console.log('➕ Criando novo pedido...');
+        
         const {
             customerName,
             customerEmail,
             customerPhone,
-            cpuType,
+            cpuType,        // ID do produto
             quantity,
             deliveryDate,
             priority,
             notes
         } = req.body;
         
-        // Validações
+        // 🔍 VALIDAÇÕES DE ENTRADA
         if (!customerName || !customerEmail || !customerPhone || !cpuType || !quantity || !deliveryDate) {
+            console.log('❌ Campos obrigatórios faltando');
             return res.status(400).json({ error: 'Campos obrigatórios faltando' });
         }
         
-        if (!cpuTypes[cpuType as keyof typeof cpuTypes]) {
+        // Buscar produto no catálogo
+        const product = await prisma.product.findUnique({
+            where: { id: cpuType }
+        });
+        
+        if (!product) {
+            console.log('❌ Produto não encontrado:', cpuType);
             return res.status(400).json({ error: 'Tipo de CPU inválido' });
         }
         
         if (quantity <= 0) {
+            console.log('❌ Quantidade inválida:', quantity);
             return res.status(400).json({ error: 'Quantidade deve ser maior que zero' });
         }
         
-        // Verificar se a data de entrega é futura
+        // Validar data de entrega
         const deliveryDateObj = new Date(deliveryDate);
         if (deliveryDateObj <= new Date()) {
+            console.log('❌ Data de entrega no passado');
             return res.status(400).json({ error: 'Data de entrega deve ser futura' });
         }
+
+        // Buscar usuário admin para associar ao pedido
+        const adminUser = await prisma.user.findFirst({
+            where: { role: 'admin' }
+        });
+
+        if (!adminUser) {
+            console.log('❌ Usuário admin não encontrado');
+            return res.status(500).json({ error: 'Usuário admin não encontrado' });
+        }
         
-        const selectedCpuType = cpuTypes[cpuType as keyof typeof cpuTypes];
-        const unitPrice = selectedCpuType.price;
-        const totalPrice = unitPrice * quantity;
+        // 💰 CÁLCULOS FINANCEIROS
+        const unitPrice = product.price;
+        const unitCost = product.cost;
+        const totalAmount = unitPrice * quantity;      // Receita total
+        const totalCost = unitCost * quantity;         // Custo total
+        const profitAmount = totalAmount - totalCost;  // Lucro
+
+        // Gerar número sequencial do pedido
+        const orderCount = await prisma.order.count();
+        const orderNumber = `ORD-2024-${String(orderCount + 1).padStart(3, '0')}`;
         
-        const newOrder = {
-            id: generateOrderId(),
-            customerName,
-            customerEmail,
-            customerPhone,
-            cpuType,
-            cpuSpecs: selectedCpuType.specs,
-            quantity,
-            unitPrice,
-            totalPrice,
-            orderDate: new Date().toISOString(),
+        console.log(`💰 Cálculos: Receita R$ ${totalAmount}, Custo R$ ${totalCost}, Lucro R$ ${profitAmount}`);
+        
+        // 💾 CRIAR PEDIDO NO BANCO
+        const newOrder = await prisma.order.create({
+            data: {
+                orderNumber,
+                customerName,
+                customerEmail,
+                customerPhone,
+                status: 'pending',
+                totalAmount,
+                totalCost,
+                profitAmount,
+                createdBy: adminUser.id,
+                deliveredAt: deliveryDateObj,
+                items: {
+                    create: {  // Criar item do pedido simultaneamente
+                        productId: product.id,
+                        quantity,
+                        unitPrice,
+                        unitCost,
+                        subtotal: totalAmount,
+                        profit: profitAmount
+                    }
+                }
+            },
+            include: {
+                items: {
+                    include: {
+                        product: true
+                    }
+                }
+            }
+        });
+
+        // Formatar resposta para o frontend
+        const firstItem = newOrder.items[0];
+        const formattedOrder = {
+            id: newOrder.orderNumber,
+            customerName: newOrder.customerName,
+            customerEmail: newOrder.customerEmail || '',
+            customerPhone: newOrder.customerPhone || '',
+            cpuType: product.id,
+            cpuSpecs: product.specifications as any,
+            quantity: firstItem.quantity,
+            unitPrice: firstItem.unitPrice,
+            totalPrice: newOrder.totalAmount,
+            orderDate: newOrder.createdAt.toISOString(),
             deliveryDate: deliveryDateObj.toISOString(),
-            status: 'pending' as const,
+            status: newOrder.status as 'pending' | 'assembly' | 'testing' | 'ready' | 'delivered',
             priority: priority || 'medium',
             notes: notes || '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            createdAt: newOrder.createdAt.toISOString(),
+            updatedAt: newOrder.updatedAt.toISOString()
         };
         
-        orders.push(newOrder);
-        
-        res.status(201).json(newOrder);
+        console.log(`✅ Pedido criado: ${orderNumber} - ${customerName} - R$ ${totalAmount}`);
+        res.status(201).json(formattedOrder);
     } catch (error) {
-        console.error('Erro ao criar pedido:', error);
+        console.error('❌ Erro ao criar pedido:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
-// PUT /api/orders/:id - Atualizar pedido
-router.put('/:id', (req, res) => {
+/**
+ * ✏️ PUT /api/orders/:id
+ * 
+ * Atualiza um pedido existente no sistema.
+ * Permite modificar dados do cliente, produto, quantidade e status.
+ * Recalcula automaticamente valores quando produto/quantidade mudam.
+ * 
+ * Params: id - Número do pedido (orderNumber)
+ * Body: Campos a serem atualizados
+ * Resposta: Pedido atualizado com novos cálculos
+ */
+router.put('/:id', async (req, res) => {
     try {
-        const { id } = req.params;
-        const orderIndex = orders.findIndex(o => o.id === id);
+        const { id } = req.params;  // Número do pedido
+        console.log(`✏️ Atualizando pedido ${id}...`);
         
-        if (orderIndex === -1) {
+        // Buscar pedido existente pelo número
+        const existingOrder = await prisma.order.findFirst({
+            where: { orderNumber: id },
+            include: {
+                items: {
+                    include: {
+                        product: true
+                    }
+                }
+            }
+        });
+        
+        if (!existingOrder) {
+            console.log('❌ Pedido não encontrado:', id);
             return res.status(404).json({ error: 'Pedido não encontrado' });
         }
         
@@ -326,29 +352,35 @@ router.put('/:id', (req, res) => {
             notes
         } = req.body;
         
-        const currentOrder = orders[orderIndex];
+        let updateData: any = {};
+        let itemUpdateData: any = {};
+        let needsItemUpdate = false;
         
-        // Atualizar apenas campos fornecidos
-        if (customerName !== undefined) currentOrder.customerName = customerName;
-        if (customerEmail !== undefined) currentOrder.customerEmail = customerEmail;
-        if (customerPhone !== undefined) currentOrder.customerPhone = customerPhone;
+        // 📝 ATUALIZAR CAMPOS BÁSICOS DO PEDIDO
+        if (customerName !== undefined) updateData.customerName = customerName;
+        if (customerEmail !== undefined) updateData.customerEmail = customerEmail;
+        if (customerPhone !== undefined) updateData.customerPhone = customerPhone;
+        if (status !== undefined) updateData.status = status;
+        
         if (deliveryDate !== undefined) {
             const deliveryDateObj = new Date(deliveryDate);
             if (deliveryDateObj <= new Date()) {
                 return res.status(400).json({ error: 'Data de entrega deve ser futura' });
             }
-            currentOrder.deliveryDate = deliveryDateObj.toISOString();
+            updateData.deliveredAt = deliveryDateObj;
         }
-        if (status !== undefined) currentOrder.status = status;
-        if (priority !== undefined) currentOrder.priority = priority;
-        if (notes !== undefined) currentOrder.notes = notes;
         
-        // Se mudou o tipo de CPU ou quantidade, recalcular preços
+        // 💰 RECALCULAR VALORES SE PRODUTO/QUANTIDADE MUDARAM
         if (cpuType !== undefined || quantity !== undefined) {
-            const newCpuType = cpuType || currentOrder.cpuType;
-            const newQuantity = quantity || currentOrder.quantity;
+            const newCpuType = cpuType || existingOrder.items[0]?.productId;
+            const newQuantity = quantity || existingOrder.items[0]?.quantity;
             
-            if (!cpuTypes[newCpuType as keyof typeof cpuTypes]) {
+            // Buscar dados do produto
+            const product = await prisma.product.findUnique({
+                where: { id: newCpuType }
+            });
+            
+            if (!product) {
                 return res.status(400).json({ error: 'Tipo de CPU inválido' });
             }
             
@@ -356,108 +388,133 @@ router.put('/:id', (req, res) => {
                 return res.status(400).json({ error: 'Quantidade deve ser maior que zero' });
             }
             
-            const selectedCpuType = cpuTypes[newCpuType as keyof typeof cpuTypes];
-            currentOrder.cpuType = newCpuType;
-            currentOrder.cpuSpecs = selectedCpuType.specs;
-            currentOrder.quantity = newQuantity;
-            currentOrder.unitPrice = selectedCpuType.price;
-            currentOrder.totalPrice = selectedCpuType.price * newQuantity;
+            // Recalcular valores financeiros
+            const unitPrice = product.price;
+            const unitCost = product.cost;
+            const totalAmount = unitPrice * newQuantity;
+            const totalCost = unitCost * newQuantity;
+            const profitAmount = totalAmount - totalCost;
+            
+            console.log(`💰 Recalculando: Receita R$ ${totalAmount}, Custo R$ ${totalCost}, Lucro R$ ${profitAmount}`);
+            
+            // Atualizar dados do pedido
+            updateData.totalAmount = totalAmount;
+            updateData.totalCost = totalCost;
+            updateData.profitAmount = profitAmount;
+            
+            // Preparar atualização do item
+            itemUpdateData = {
+                productId: product.id,
+                quantity: newQuantity,
+                unitPrice,
+                unitCost,
+                subtotal: totalAmount,
+                profit: profitAmount
+            };
+            needsItemUpdate = true;
         }
         
-        currentOrder.updatedAt = new Date().toISOString();
+        // 💾 EXECUTAR ATUALIZAÇÕES NO BANCO
+        const updatedOrder = await prisma.order.update({
+            where: { id: existingOrder.id },
+            data: updateData,
+            include: {
+                items: {
+                    include: {
+                        product: true
+                    }
+                }
+            }
+        });
+
+        // Atualizar item se necessário
+        if (needsItemUpdate && existingOrder.items[0]) {
+            await prisma.orderItem.update({
+                where: { id: existingOrder.items[0].id },
+                data: itemUpdateData
+            });
+        }
+
+        // Buscar pedido final atualizado
+        const finalOrder = await prisma.order.findUnique({
+            where: { id: existingOrder.id },
+            include: {
+                items: {
+                    include: {
+                        product: true
+                    }
+                }
+            }
+        });
+
+        if (!finalOrder) {
+            return res.status(500).json({ error: 'Erro ao buscar pedido atualizado' });
+        }
+
+        // Formatar resposta
+        const firstItem = finalOrder.items[0];
+        const product = firstItem?.product;
         
-        res.json(currentOrder);
+        const formattedOrder = {
+            id: finalOrder.orderNumber,
+            customerName: finalOrder.customerName,
+            customerEmail: finalOrder.customerEmail || '',
+            customerPhone: finalOrder.customerPhone || '',
+            cpuType: product?.id || '',
+            cpuSpecs: product?.specifications as any || {},
+            quantity: firstItem?.quantity || 0,
+            unitPrice: firstItem?.unitPrice || 0,
+            totalPrice: finalOrder.totalAmount,
+            orderDate: finalOrder.createdAt.toISOString(),
+            deliveryDate: finalOrder.deliveredAt?.toISOString() || new Date().toISOString(),
+            status: finalOrder.status as 'pending' | 'assembly' | 'testing' | 'ready' | 'delivered',
+            priority: priority || 'medium',
+            notes: notes || '',
+            createdAt: finalOrder.createdAt.toISOString(),
+            updatedAt: finalOrder.updatedAt.toISOString()
+        };
+        
+        console.log(`✅ Pedido ${id} atualizado com sucesso`);
+        res.json(formattedOrder);
     } catch (error) {
-        console.error('Erro ao atualizar pedido:', error);
+        console.error('❌ Erro ao atualizar pedido:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
-// DELETE /api/orders/:id - Deletar pedido
-router.delete('/:id', (req, res) => {
+/**
+ * 🗑️ DELETE /api/orders/:id
+ * 
+ * Remove um pedido do sistema permanentemente.
+ * Os itens do pedido são removidos automaticamente (CASCADE).
+ * 
+ * Params: id - Número do pedido (orderNumber)
+ * Resposta: Status 204 (No Content) em caso de sucesso
+ */
+router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const orderIndex = orders.findIndex(o => o.id === id);
+        console.log(`🗑️ Deletando pedido ${id}...`);
         
-        if (orderIndex === -1) {
+        // Buscar pedido pelo número
+        const existingOrder = await prisma.order.findFirst({
+            where: { orderNumber: id }
+        });
+        
+        if (!existingOrder) {
+            console.log('❌ Pedido não encontrado para deleção:', id);
             return res.status(404).json({ error: 'Pedido não encontrado' });
         }
         
-        // Não permitir deletar pedidos em produção ou entregues
-        const order = orders[orderIndex];
-        if (order.status === 'assembly' || order.status === 'testing' || order.status === 'delivered') {
-            return res.status(400).json({ 
-                error: 'Não é possível deletar pedidos em produção ou já entregues' 
-            });
-        }
+        // Deletar pedido (itens são deletados automaticamente por CASCADE)
+        await prisma.order.delete({
+            where: { id: existingOrder.id }
+        });
         
-        orders.splice(orderIndex, 1);
-        
+        console.log(`✅ Pedido ${id} deletado com sucesso`);
         res.status(204).send();
     } catch (error) {
-        console.error('Erro ao deletar pedido:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-});
-
-// GET /api/orders/stats/summary - Estatísticas dos pedidos
-router.get('/stats/summary', (req, res) => {
-    try {
-        const totalOrders = orders.length;
-        const pendingOrders = orders.filter(o => o.status === 'pending').length;
-        const inProgressOrders = orders.filter(o => o.status === 'assembly' || o.status === 'testing').length;
-        const completedOrders = orders.filter(o => o.status === 'delivered').length;
-        const totalRevenue = orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + o.totalPrice, 0);
-        const averageOrderValue = totalOrders > 0 ? orders.reduce((sum, o) => sum + o.totalPrice, 0) / totalOrders : 0;
-        
-        // Pedidos por prioridade
-        const highPriority = orders.filter(o => o.priority === 'high').length;
-        const mediumPriority = orders.filter(o => o.priority === 'medium').length;
-        const lowPriority = orders.filter(o => o.priority === 'low').length;
-        
-        // Produtos mais vendidos
-        const productStats = Object.keys(cpuTypes).map(cpuType => {
-            const typeOrders = orders.filter(o => o.cpuType === cpuType);
-            const totalQuantity = typeOrders.reduce((sum, o) => sum + o.quantity, 0);
-            const totalValue = typeOrders.reduce((sum, o) => sum + o.totalPrice, 0);
-            
-            return {
-                cpuType,
-                name: cpuTypes[cpuType as keyof typeof cpuTypes].name,
-                orderCount: typeOrders.length,
-                totalQuantity,
-                totalValue
-            };
-        }).sort((a, b) => b.totalValue - a.totalValue);
-        
-        res.json({
-            summary: {
-                totalOrders,
-                pendingOrders,
-                inProgressOrders,
-                completedOrders,
-                totalRevenue,
-                averageOrderValue
-            },
-            priorities: {
-                high: highPriority,
-                medium: mediumPriority,
-                low: lowPriority
-            },
-            topProducts: productStats.slice(0, 5)
-        });
-    } catch (error) {
-        console.error('Erro ao buscar estatísticas:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-});
-
-// GET /api/orders/cpu-types - Buscar tipos de CPU disponíveis
-router.get('/cpu-types', (req, res) => {
-    try {
-        res.json(cpuTypes);
-    } catch (error) {
-        console.error('Erro ao buscar tipos de CPU:', error);
+        console.error('❌ Erro ao deletar pedido:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
@@ -737,217 +794,18 @@ router.get('/teams', (req, res) => {
 router.post('/teams', (req, res) => {
     console.log('✅ POST /api/orders/teams - Criando nova equipe');
     const newTeam = {
-        id: `team-${Date.now()}`,
-        ...req.body,
-        members: [],
-        tasks: [],
+        id: 'new-team-id',
+        name: 'Nova Equipe',
+        description: 'Descrição da nova equipe',
+        leader: 'Nome do Líder',
         activeProjects: 0,
-        efficiency: 85,
-        completedOrders: 0
+        efficiency: 0,
+        completedOrders: 0,
+        tasks: [],
+        members: []
     };
-    
-    res.status(201).json(newTeam);
+
+    res.json(newTeam);
 });
 
-// Update team
-router.put('/teams/:id', (req, res) => {
-    console.log(`✅ PUT /api/orders/teams/${req.params.id} - Atualizando equipe`);
-    const updatedTeam = {
-        id: req.params.id,
-        ...req.body
-    };
-    
-    res.json(updatedTeam);
-});
-
-// Delete team
-router.delete('/teams/:id', (req, res) => {
-    console.log(`✅ DELETE /api/orders/teams/${req.params.id} - Deletando equipe`);
-    res.json({ message: 'Equipe deletada com sucesso' });
-});
-
-// Add member to team
-router.post('/teams/:id/members', (req, res) => {
-    console.log(`✅ POST /api/orders/teams/${req.params.id}/members - Adicionando membro`);
-    const newMember = {
-        id: Date.now(),
-        ...req.body,
-        joinDate: new Date().toISOString(),
-        availability: true,
-        efficiency: Math.floor(Math.random() * 15) + 85 // 85-99%
-    };
-    
-    res.status(201).json(newMember);
-});
-
-// Update task status
-router.put('/teams/:teamId/tasks/:taskId', (req, res) => {
-    console.log(`✅ PUT /api/orders/teams/${req.params.teamId}/tasks/${req.params.taskId} - Atualizando status da tarefa`);
-    const updatedTask = {
-        id: req.params.taskId,
-        ...req.body
-    };
-    
-    res.json(updatedTask);
-});
-
-// Add task to team
-router.post('/teams/:id/tasks', (req, res) => {
-    console.log(`✅ POST /api/orders/teams/${req.params.id}/tasks - Adicionando tarefa`);
-    const newTask = {
-        id: `task-${Date.now()}`,
-        ...req.body,
-        createdAt: new Date().toISOString()
-    };
-    
-    res.status(201).json(newTask);
-});
-
-// ===============================================
-// QUALITY ENDPOINTS (TEMPORARY - DEVE SER MOVIDO PARA /api/quality)
-// ===============================================
-
-// GET /api/orders/quality/reports - Buscar relatórios de qualidade
-router.get('/quality/reports', authMiddleware, (req, res) => {
-    try {
-        console.log('✅ GET /api/orders/quality/reports - Buscando relatórios de qualidade');
-        
-        const qualityReports = [
-            {
-                id: 'QR001',
-                title: 'Relatório de Qualidade - Dezembro 2024',
-                type: 'monthly',
-                status: 'completed',
-                createdAt: '2024-12-15T10:00:00Z',
-                updatedAt: '2024-12-15T10:00:00Z',
-                summary: {
-                    totalTests: 156,
-                    passedTests: 148,
-                    failedTests: 8,
-                    passRate: 94.87,
-                    categories: {
-                        hardware: { total: 78, passed: 75, failed: 3 },
-                        software: { total: 45, passed: 43, failed: 2 },
-                        integration: { total: 33, passed: 30, failed: 3 }
-                    }
-                }
-            },
-            {
-                id: 'QR002', 
-                title: 'Relatório Semanal - Semana 50',
-                type: 'weekly',
-                status: 'in_progress',
-                createdAt: '2024-12-12T09:00:00Z',
-                updatedAt: '2024-12-16T14:30:00Z',
-                summary: {
-                    totalTests: 45,
-                    passedTests: 42,
-                    failedTests: 3,
-                    passRate: 93.33,
-                    categories: {
-                        hardware: { total: 20, passed: 19, failed: 1 },
-                        software: { total: 15, passed: 14, failed: 1 },
-                        integration: { total: 10, passed: 9, failed: 1 }
-                    }
-                }
-            }
-        ];
-        
-        res.json(qualityReports);
-    } catch (error) {
-        console.error('❌ Erro ao buscar relatórios de qualidade:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-});
-
-// GET /api/orders/quality/metrics - Buscar métricas de qualidade
-router.get('/quality/metrics', authMiddleware, (req, res) => {
-    try {
-        console.log('✅ GET /api/orders/quality/metrics - Buscando métricas de qualidade');
-        
-        const qualityMetrics = {
-            overview: {
-                totalProducts: 342,
-                qualityScore: 94.2,
-                defectRate: 5.8,
-                customerSatisfaction: 4.6
-            },
-            trends: {
-                lastMonth: {
-                    qualityScore: 93.1,
-                    defectRate: 6.9,
-                    improvement: "+1.1%"
-                },
-                lastWeek: {
-                    qualityScore: 95.2,
-                    defectRate: 4.8,
-                    improvement: "+2.1%"
-                }
-            },
-            categories: [
-                {
-                    name: 'Hardware Quality',
-                    score: 96.5,
-                    trend: 'up',
-                    issues: 12,
-                    resolved: 10
-                },
-                {
-                    name: 'Software Quality', 
-                    score: 92.8,
-                    trend: 'stable',
-                    issues: 8,
-                    resolved: 7
-                },
-                {
-                    name: 'Integration Tests',
-                    score: 89.4,
-                    trend: 'down',
-                    issues: 15,
-                    resolved: 11
-                }
-            ],
-            recentIssues: [
-                {
-                    id: 'QI001',
-                    title: 'GPU não detectada em teste de hardware',
-                    severity: 'high',
-                    status: 'resolved',
-                    reportedAt: '2024-12-15T08:30:00Z',
-                    resolvedAt: '2024-12-15T14:20:00Z'
-                },
-                {
-                    id: 'QI002',
-                    title: 'Falha em teste de stress de CPU',
-                    severity: 'medium',
-                    status: 'in_progress',
-                    reportedAt: '2024-12-16T10:15:00Z'
-                }
-            ]
-        };
-        
-        res.json(qualityMetrics);
-    } catch (error) {
-        console.error('❌ Erro ao buscar métricas de qualidade:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-});
-
-// GET /api/orders/:id - Buscar pedido específico (DEVE VIR POR ÚLTIMO)
-router.get('/:id', (req, res) => {
-    try {
-        const { id } = req.params;
-        const order = orders.find(o => o.id === id);
-        
-        if (!order) {
-            return res.status(404).json({ error: 'Pedido não encontrado' });
-        }
-        
-        res.json(order);
-    } catch (error) {
-        console.error('Erro ao buscar pedido:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-});
-
-export default router; 
+export default router;

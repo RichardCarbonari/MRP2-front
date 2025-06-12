@@ -93,7 +93,12 @@ const MaintenanceManagement = () => {
                 status: statusFilter || undefined,
                 priority: priorityFilter || undefined
             };
-            const data = await maintenanceService.getAllRequests(filters);
+
+            // Usar a função apropriada baseada no papel do usuário
+            const data = user?.role === 'admin' || user?.role === 'maintenance'
+                ? await maintenanceService.getAllRequests(filters)
+                : await maintenanceService.getUserRequests();
+
             setRequests(data);
         } catch (error) {
             console.error('Error loading requests:', error);

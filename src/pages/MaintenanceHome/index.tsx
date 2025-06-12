@@ -36,7 +36,9 @@ const MaintenanceHome = () => {
             setLoading(true);
             const [statsData, requestsData] = await Promise.all([
                 maintenanceService.getStats(),
-                maintenanceService.getAllRequests() // Usar dados reais
+                user?.role === 'admin' || user?.role === 'maintenance'
+                    ? maintenanceService.getAllRequests()
+                    : maintenanceService.getUserRequests()
             ]);
             
             setStats(statsData);

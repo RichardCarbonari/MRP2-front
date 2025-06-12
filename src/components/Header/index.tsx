@@ -53,6 +53,7 @@ const Header = () => {
                     { text: 'Qualidade', path: '/quality-admin', icon: VerifiedIcon },
                     { text: 'Financeiro', path: '/financial', icon: AccountBalanceIcon },
                     { text: 'Manutenção', path: '/maintenance', icon: BuildIcon },
+                    { text: 'Usuários', path: '/user-management', icon: PersonIcon },
                     { text: 'Configurações', path: '/settings', icon: SettingsIcon }
                 ];
             case 'maintenance':

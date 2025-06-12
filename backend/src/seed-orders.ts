@@ -3,173 +3,123 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function seedOrders() {
-    console.log('🛒 Criando pedidos de exemplo...');
+    console.log('🌱 Iniciando seed de pedidos...');
     
     try {
-        // Buscar usuários e produtos disponíveis
-        const users = await prisma.user.findMany();
-        const products = await prisma.product.findMany();
+        // Primeiro, vamos buscar os produtos disponíveis e um usuário admin
+        const products = await prisma.product.findMany({
+            where: {
+                category: 'CPU'
+            }
+        });
 
-        if (users.length === 0) {
-            console.log('❌ Nenhum usuário encontrado. Execute primeiro o seed de usuários.');
-            return;
-        }
+        const adminUser = await prisma.user.findFirst({
+            where: {
+                role: 'admin'
+            }
+        });
 
         if (products.length === 0) {
-            console.log('❌ Nenhum produto encontrado. Execute primeiro o seed de produtos.');
+            console.log('❌ Nenhum produto CPU encontrado. Execute o seed de produtos primeiro.');
             return;
         }
 
-        const adminUser = users.find(u => u.role === 'admin') || users[0];
+        if (!adminUser) {
+            console.log('❌ Nenhum usuário admin encontrado. Execute o seed de usuários primeiro.');
+            return;
+        }
 
-        // Criar pedidos de exemplo
+        console.log(`✅ Encontrados ${products.length} produtos CPU`);
+
+        // Dados de exemplo para pedidos
         const sampleOrders = [
-            // Pedido 1: Sistema Gaming High-End
             {
-                orderNumber: 'ORD-2024-001',
-                customerName: 'João Silva - Gaming Setup',
+                customerName: 'João Silva',
                 customerEmail: 'joao.silva@email.com',
-                customerPhone: '(11) 99999-0001',
-                status: 'delivered',
-                items: [
-                    { productName: 'Intel Core i9-13900K', quantity: 1 },
-                    { productName: 'NVIDIA RTX 4090', quantity: 1 },
-                    { productName: 'DDR5-5600 32GB Kit', quantity: 1 }
-                ]
+                customerPhone: '(11) 99999-1111',
+                quantity: 2,
+                status: 'pending' as const,
+                deliveredAt: null
             },
-            // Pedido 2: Servidor Empresarial
             {
-                orderNumber: 'ORD-2024-002',
-                customerName: 'Empresa TechCorp - Servidor Principal',
-                customerEmail: 'compras@techcorp.com.br',
-                customerPhone: '(11) 3333-0001',
-                status: 'delivered',
-                items: [
-                    { productName: 'Intel Xeon Platinum 8480+', quantity: 2 },
-                    { productName: 'DDR5-5600 32GB Kit', quantity: 8 }
-                ]
+                customerName: 'Maria Santos',
+                customerEmail: 'maria.santos@empresa.com',
+                customerPhone: '(11) 88888-2222',
+                quantity: 1,
+                status: 'processing' as const,
+                deliveredAt: null
             },
-            // Pedido 3: Workstation AMD
             {
-                orderNumber: 'ORD-2024-003',
-                customerName: 'Maria Santos - Workstation',
-                customerEmail: 'maria.santos@design.com',
-                customerPhone: '(11) 88888-0003',
-                status: 'delivered',
-                items: [
-                    { productName: 'AMD Ryzen 9 7950X', quantity: 1 },
-                    { productName: 'AMD RX 7900 XTX', quantity: 1 },
-                    { productName: 'DDR5-5600 32GB Kit', quantity: 2 }
-                ]
+                customerName: 'Pedro Oliveira',
+                customerEmail: 'pedro.oliveira@gmail.com',
+                customerPhone: '(11) 77777-3333',
+                quantity: 3,
+                status: 'delivered' as const,
+                deliveredAt: new Date('2024-01-30')
             },
-            // Pedido 4: Gaming Otimizado
             {
-                orderNumber: 'ORD-2024-004',
-                customerName: 'Pedro Costa - Gamer Pro',
-                customerEmail: 'pedro.gamer@email.com',
-                customerPhone: '(11) 77777-0004',
-                status: 'delivered',
-                items: [
-                    { productName: 'AMD Ryzen 7 7800X3D', quantity: 1 },
-                    { productName: 'NVIDIA RTX 4090', quantity: 1 },
-                    { productName: 'DDR5-5600 32GB Kit', quantity: 1 }
-                ]
+                customerName: 'Ana Costa',
+                customerEmail: 'ana.costa@tech.com',
+                customerPhone: '(11) 66666-4444',
+                quantity: 1,
+                status: 'pending' as const,
+                deliveredAt: null
             },
-            // Pedido 5: Servidor Médio Porte
             {
-                orderNumber: 'ORD-2024-005',
-                customerName: 'DataCenter Solutions',
-                customerEmail: 'vendas@datacenter.com.br',
-                customerPhone: '(11) 4444-0005',
-                status: 'ready',
-                items: [
-                    { productName: 'AMD EPYC 9654', quantity: 1 },
-                    { productName: 'DDR5-5600 32GB Kit', quantity: 16 }
-                ]
+                customerName: 'Carlos Ferreira',
+                customerEmail: 'carlos.ferreira@startup.com',
+                customerPhone: '(11) 55555-5555',
+                quantity: 4,
+                status: 'processing' as const,
+                deliveredAt: null
             },
-            // Pedido 6: Build Mainstream
             {
-                orderNumber: 'ORD-2024-006',
-                customerName: 'Carlos Oliveira - Office Build',
-                customerEmail: 'carlos.office@empresa.com',
-                customerPhone: '(11) 66666-0006',
-                status: 'delivered',
-                items: [
-                    { productName: 'Intel Core i5-13600K', quantity: 2 },
-                    { productName: 'DDR5-5600 32GB Kit', quantity: 2 }
-                ]
-            },
-            // Pedido 7: Servidor Enterprise
-            {
-                orderNumber: 'ORD-2024-007',
-                customerName: 'Mega Corp Ltda',
-                customerEmail: 'ti@megacorp.com.br',
-                customerPhone: '(11) 2222-0007',
-                status: 'delivered',
-                items: [
-                    { productName: 'Intel Xeon Gold 6448Y', quantity: 4 },
-                    { productName: 'AMD EPYC 9454', quantity: 2 }
-                ]
-            },
-            // Pedido 8: Gaming Médio
-            {
-                orderNumber: 'ORD-2024-008',
-                customerName: 'Ana Paula - Gaming',
-                customerEmail: 'ana.gamer@email.com',
-                customerPhone: '(11) 55555-0008',
-                status: 'delivered',
-                items: [
-                    { productName: 'Intel Core i7-13700K', quantity: 1 },
-                    { productName: 'AMD RX 7900 XTX', quantity: 1 },
-                    { productName: 'DDR5-5600 32GB Kit', quantity: 1 }
-                ]
+                customerName: 'Lucia Rodrigues',
+                customerEmail: 'lucia.rodrigues@consultoria.com',
+                customerPhone: '(11) 44444-6666',
+                quantity: 2,
+                status: 'delivered' as const,
+                deliveredAt: new Date('2024-01-25')
             }
         ];
 
-        for (const orderData of sampleOrders) {
-            let totalAmount = 0;
-            let totalCost = 0;
-            const orderItems = [];
+        // Criar os pedidos
+        for (let i = 0; i < sampleOrders.length; i++) {
+            const orderData = sampleOrders[i];
+            // Selecionar um produto aleatório
+            const randomProduct = products[Math.floor(Math.random() * products.length)];
+            
+            // Calcular valores
+            const unitPrice = randomProduct.price;
+            const unitCost = randomProduct.cost;
+            const subtotal = unitPrice * orderData.quantity;
+            const itemCost = unitCost * orderData.quantity;
+            const profit = subtotal - itemCost;
 
-            // Calcular totais e preparar itens
-            for (const item of orderData.items) {
-                const product = products.find(p => p.name === item.productName);
-                if (product) {
-                    const subtotal = product.price * item.quantity;
-                    const itemCost = product.cost * item.quantity;
-                    const profit = subtotal - itemCost;
+            // Gerar número do pedido único
+            const orderNumber = `ORD-2024-${String(i + 1).padStart(3, '0')}`;
 
-                    totalAmount += subtotal;
-                    totalCost += itemCost;
-
-                    orderItems.push({
-                        productId: product.id,
-                        quantity: item.quantity,
-                        unitPrice: product.price,
-                        unitCost: product.cost,
-                        subtotal,
-                        profit
-                    });
-                }
-            }
-
-            const profitAmount = totalAmount - totalCost;
-
-            // Criar o pedido
             const order = await prisma.order.create({
                 data: {
-                    orderNumber: orderData.orderNumber,
+                    orderNumber: orderNumber,
                     customerName: orderData.customerName,
                     customerEmail: orderData.customerEmail,
                     customerPhone: orderData.customerPhone,
                     status: orderData.status,
-                    totalAmount,
-                    totalCost,
-                    profitAmount,
+                    totalAmount: subtotal,
+                    totalCost: itemCost,
+                    profitAmount: profit,
                     createdBy: adminUser.id,
-                    deliveredAt: orderData.status === 'delivered' ? new Date() : null,
+                    deliveredAt: orderData.deliveredAt,
                     items: {
-                        create: orderItems
+                        create: {
+                            productId: randomProduct.id,
+                            quantity: orderData.quantity,
+                            unitPrice: unitPrice,
+                            unitCost: unitCost,
+                            subtotal: subtotal,
+                            profit: profit
+                        }
                     }
                 },
                 include: {
@@ -182,56 +132,30 @@ async function seedOrders() {
             });
 
             console.log(`✅ Pedido criado: ${order.orderNumber} - ${order.customerName}`);
-            console.log(`   💰 Total: R$ ${totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
-            console.log(`   📦 ${orderItems.length} itens`);
+            console.log(`   📦 ${randomProduct.name} (${orderData.quantity}x) - R$ ${subtotal.toFixed(2)}`);
         }
 
-        console.log('\n🎉 Todos os pedidos foram criados com sucesso!');
+        console.log('🎉 Seed de pedidos concluído com sucesso!');
         
-        // Estatísticas finais
-        const orderCount = await prisma.order.count();
+        // Mostrar estatísticas
+        const totalOrders = await prisma.order.count();
+        const pendingOrders = await prisma.order.count({ where: { status: 'pending' } });
+        const processingOrders = await prisma.order.count({ where: { status: 'processing' } });
+        const deliveredOrders = await prisma.order.count({ where: { status: 'delivered' } });
+
         const totalRevenue = await prisma.order.aggregate({
-            _sum: { totalAmount: true },
-            where: { status: { in: ['delivered', 'ready'] } }
+            _sum: { totalAmount: true }
         });
 
-        console.log(`📊 Total de pedidos: ${orderCount}`);
-        console.log(`💰 Receita total: R$ ${(totalRevenue._sum.totalAmount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
-
-        // Vendas por categoria
-        const salesByCategory = await prisma.orderItem.groupBy({
-            by: ['productId'],
-            _sum: {
-                quantity: true,
-                subtotal: true
-            },
-            where: {
-                order: {
-                    status: { in: ['delivered', 'ready'] }
-                }
-            }
-        });
-
-        console.log('\n📋 Resumo de vendas por categoria:');
-        const categoryTotals: { [key: string]: { quantity: number; revenue: number } } = {};
-        
-        for (const sale of salesByCategory) {
-            const product = products.find(p => p.id === sale.productId);
-            if (product) {
-                if (!categoryTotals[product.category]) {
-                    categoryTotals[product.category] = { quantity: 0, revenue: 0 };
-                }
-                categoryTotals[product.category].quantity += sale._sum.quantity || 0;
-                categoryTotals[product.category].revenue += sale._sum.subtotal || 0;
-            }
-        }
-
-        Object.entries(categoryTotals).forEach(([category, data]) => {
-            console.log(`  ${category}: ${data.quantity} unidades - R$ ${data.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
-        });
+        console.log('\n📊 Estatísticas dos pedidos:');
+        console.log(`Total de pedidos: ${totalOrders}`);
+        console.log(`Pendentes: ${pendingOrders}`);
+        console.log(`Em processamento: ${processingOrders}`);
+        console.log(`Entregues: ${deliveredOrders}`);
+        console.log(`Receita total: R$ ${(totalRevenue._sum.totalAmount || 0).toFixed(2)}`);
 
     } catch (error) {
-        console.error('❌ Erro ao criar pedidos:', error);
+        console.error('❌ Erro ao fazer seed dos pedidos:', error);
     } finally {
         await prisma.$disconnect();
     }

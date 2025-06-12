@@ -1,6 +1,9 @@
-import { Router } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { authMiddleware } from '../middleware/auth';
 
-const router = Router();
+const router = express.Router();
+const prisma = new PrismaClient();
 
 // Mock data para relatórios de qualidade
 const qualityReports = [
@@ -106,26 +109,115 @@ const qualityMetrics = {
     ]
 };
 
+// Middleware de validação para relatórios de qualidade
+const validateQualityReport = (req: Request, res: Response, next: NextFunction) => {
+  const { title, type, description, category } = req.body;
+
+  if (!title || !type || !description || !category) {
+    return res.status(400).json({
+      message: 'Todos os campos são obrigatórios: title, type, description, category'
+    });
+  }
+
+  const validTypes = ['hardware', 'software', 'integration'];
+  if (!validTypes.includes(type)) {
+    return res.status(400).json({
+      message: 'Tipo inválido. Use: hardware, software ou integration'
+    });
+  }
+
+  next();
+};
+
 // GET /api/quality/reports - Buscar relatórios de qualidade
-router.get('/reports', (req, res) => {
-    try {
-        console.log('✅ GET /api/quality/reports - Buscando relatórios de qualidade');
-        res.json(qualityReports);
-    } catch (error) {
-        console.error('❌ Erro ao buscar relatórios de qualidade:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
+router.get('/reports', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = (req as any).user;
+    
+    // Se for admin, retorna todos os relatórios
+    if (user.role === 'admin') {
+      const reports = await prisma.qualityReport.findMany({
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+              role: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      // Mapear para incluir informações do usuário
+      const reportsWithUserInfo = reports.map(report => ({
+        ...report,
+        reportedByName: report.user.name,
+        reportedByEmail: report.user.email
+      }));
+
+      return res.json(reportsWithUserInfo);
     }
+
+    // Se for funcionário, retorna apenas seus relatórios
+    const reports = await prisma.qualityReport.findMany({
+      where: {
+        reportedBy: user.userId
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json(reports);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // GET /api/quality/metrics - Buscar métricas de qualidade
-router.get('/metrics', (req, res) => {
-    try {
-        console.log('✅ GET /api/quality/metrics - Buscando métricas de qualidade');
-        res.json(qualityMetrics);
-    } catch (error) {
-        console.error('❌ Erro ao buscar métricas de qualidade:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
+router.get('/metrics', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = (req as any).user;
+    
+    // Apenas admin pode ver métricas
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        message: 'Acesso negado. Apenas administradores podem ver métricas'
+      });
     }
+
+    const totalReports = await prisma.qualityReport.count();
+    const pendingReports = await prisma.qualityReport.count({
+      where: { status: 'pending' }
+    });
+    const resolvedReports = await prisma.qualityReport.count({
+      where: { status: 'resolved' }
+    });
+
+    const metrics = {
+      overview: {
+        totalReports,
+        pendingReports,
+        resolvedReports,
+        resolutionRate: totalReports > 0 ? (resolvedReports / totalReports) * 100 : 0
+      },
+      byCategory: await prisma.qualityReport.groupBy({
+        by: ['category'],
+        _count: true
+      }),
+      byType: await prisma.qualityReport.groupBy({
+        by: ['type'],
+        _count: true
+      })
+    };
+
+    res.json(metrics);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // GET /api/quality/reports/:id - Buscar relatório específico
@@ -148,49 +240,68 @@ router.get('/reports/:id', (req, res) => {
 });
 
 // POST /api/quality/reports - Criar novo relatório
-router.post('/reports', (req, res) => {
-    try {
-        console.log('✅ POST /api/quality/reports - Criando novo relatório');
-        
-        const newReport = {
-            id: `QR${String(qualityReports.length + 1).padStart(3, '0')}`,
-            ...req.body,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            status: 'in_progress'
-        };
-        
-        qualityReports.push(newReport);
-        res.status(201).json(newReport);
-    } catch (error) {
-        console.error('❌ Erro ao criar relatório:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
+router.post('/reports', authMiddleware, validateQualityReport, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { title, type, description, category } = req.body;
+    const userId = (req as any).user.userId;
+
+    const report = await prisma.qualityReport.create({
+      data: {
+        title,
+        type,
+        description,
+        category,
+        status: 'pending',
+        reportedBy: userId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+
+    res.status(201).json(report);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // PUT /api/quality/reports/:id - Atualizar relatório
-router.put('/reports/:id', (req, res) => {
-    try {
-        const { id } = req.params;
-        console.log(`✅ PUT /api/quality/reports/${id} - Atualizando relatório`);
-        
-        const reportIndex = qualityReports.findIndex(r => r.id === id);
-        
-        if (reportIndex === -1) {
-            return res.status(404).json({ error: 'Relatório não encontrado' });
-        }
-        
-        qualityReports[reportIndex] = {
-            ...qualityReports[reportIndex],
-            ...req.body,
-            updatedAt: new Date().toISOString()
-        };
-        
-        res.json(qualityReports[reportIndex]);
-    } catch (error) {
-        console.error('❌ Erro ao atualizar relatório:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
+router.put('/reports/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { status, notes, resolution } = req.body;
+    const user = (req as any).user;
+
+    const report = await prisma.qualityReport.findUnique({
+      where: { id }
+    });
+
+    if (!report) {
+      return res.status(404).json({
+        message: 'Relatório não encontrado'
+      });
     }
+
+    // Apenas admin pode atualizar status e resolução
+    if (user.role !== 'admin' && (status || resolution)) {
+      return res.status(403).json({
+        message: 'Apenas administradores podem atualizar o status e resolução'
+      });
+    }
+
+    const updatedReport = await prisma.qualityReport.update({
+      where: { id },
+      data: {
+        status: status || report.status,
+        notes: notes || report.notes,
+        resolution: resolution || report.resolution,
+        updatedAt: new Date()
+      }
+    });
+
+    res.json(updatedReport);
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router; 

@@ -94,19 +94,22 @@ const TeamsManagement = () => {
     const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
     const [openMemberDialog, setOpenMemberDialog] = useState(false);
     const [openTaskDialog, setOpenTaskDialog] = useState(false);
+    const [orders, setOrders] = useState<any[]>([]);
+    const [cpuTypes, setCpuTypes] = useState<any[]>([]);
     const [newTask, setNewTask] = useState<Partial<TeamTask>>({
         orderId: '',
         cpuType: '',
         components: [],
         priority: 'media',
         status: 'pendente',
-        estimatedTime: 1,
         notes: ''
     });
 
     // Fetch teams data from backend
     useEffect(() => {
         fetchTeams();
+        fetchOrders();
+        fetchCpuTypes();
     }, []);
 
     const fetchTeams = async () => {
@@ -119,6 +122,44 @@ const TeamsManagement = () => {
             console.error('❌ Erro ao buscar equipes:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchOrders = async () => {
+        try {
+            console.log('🔄 Buscando pedidos...');
+            const response = await axios.get('/api/orders');
+            setOrders(response.data);
+            console.log('✅ Pedidos carregados:', response.data.length);
+        } catch (error) {
+            console.error('❌ Erro ao buscar pedidos:', error);
+            // Dados mock para desenvolvimento
+            setOrders([
+                { id: 'ORD-001', customerName: 'João Silva', cpuType: 'Gaming Básico', status: 'pendente' },
+                { id: 'ORD-002', customerName: 'Maria Santos', cpuType: 'Gaming Avançado', status: 'em_andamento' },
+                { id: 'ORD-003', customerName: 'Pedro Costa', cpuType: 'Workstation', status: 'pendente' },
+                { id: 'ORD-004', customerName: 'Ana Oliveira', cpuType: 'Office/Corporativo', status: 'pendente' },
+                { id: 'ORD-005', customerName: 'Carlos Lima', cpuType: 'Entrada/Budget', status: 'pendente' }
+            ]);
+        }
+    };
+
+    const fetchCpuTypes = async () => {
+        try {
+            console.log('🔄 Buscando tipos de CPU...');
+            const response = await axios.get('/api/orders/cpu-types');
+            setCpuTypes(response.data);
+            console.log('✅ Tipos de CPU carregados:', response.data.length);
+        } catch (error) {
+            console.error('❌ Erro ao buscar tipos de CPU:', error);
+            // Dados mock para desenvolvimento
+            setCpuTypes([
+                { id: 'gaming-basic', name: 'Gaming Básico', price: 2500 },
+                { id: 'gaming-advanced', name: 'Gaming Avançado', price: 4200 },
+                { id: 'workstation', name: 'Workstation', price: 3800 },
+                { id: 'office', name: 'Office/Corporativo', price: 1800 },
+                { id: 'budget', name: 'Entrada/Budget', price: 1200 }
+            ]);
         }
     };
 
@@ -205,6 +246,40 @@ const TeamsManagement = () => {
             notes: ''
         });
         setOpenTaskDialog(true);
+    };
+
+    // Função para preencher automaticamente os dados da tarefa com base no pedido selecionado
+    const handleOrderSelect = async (orderId: string) => {
+        try {
+            // Encontrar o pedido selecionado nos dados já carregados
+            const selectedOrder = orders.find(order => order.id === orderId);
+            
+            if (selectedOrder) {
+                console.log('🔄 Preenchendo dados do pedido:', selectedOrder.id);
+                
+                // Auto preencher o tipo de CPU
+                const newCpuType = selectedOrder.cpuType;
+                
+                // Auto preencher os componentes com base nas especificações do CPU
+                // Verificamos se o pedido tem cpuSpecs, caso contrário deixamos vazio
+                const components = selectedOrder.cpuSpecs 
+                    ? Object.values(selectedOrder.cpuSpecs).filter(Boolean).map(String)
+                    : [];
+                
+                // Atualizar o estado da nova tarefa
+                setNewTask({
+                    ...newTask,
+                    orderId,
+                    cpuType: newCpuType,
+                    components,
+                    // Mantemos priority, status e notes como estão
+                });
+                
+                console.log('✅ Dados preenchidos automaticamente');
+            }
+        } catch (error) {
+            console.error('❌ Erro ao preencher dados do pedido:', error);
+        }
     };
 
     const handleSaveTask = async () => {
@@ -362,23 +437,6 @@ const TeamsManagement = () => {
                                         </Typography>
                                         <Typography variant="h4" sx={{ color: '#4caf50' }}>
                                             {teams.reduce((acc, team) => acc + team.completedOrders, 0)}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                        <Card>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <BuildIcon sx={{ fontSize: 40, color: '#ff9800' }} />
-                                    <Box>
-                                        <Typography color="textSecondary" gutterBottom>
-                                            Eficiência Média
-                                        </Typography>
-                                        <Typography variant="h4" sx={{ color: '#ff9800' }}>
-                                            {Math.round(teams.reduce((acc, team) => acc + team.efficiency, 0) / teams.length)}%
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -759,15 +817,6 @@ const TeamsManagement = () => {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Eficiência (%)"
-                                    type="number"
-                                    defaultValue={85}
-                                    inputProps={{ min: 0, max: 100 }}
-                                />
-                            </Grid>
                         </Grid>
                     </Box>
                 </DialogContent>
@@ -808,22 +857,62 @@ const TeamsManagement = () => {
                     <Box sx={{ pt: 2 }}>
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="ID do Pedido"
-                                    required
-                                    value={newTask.orderId}
-                                    onChange={(e) => setNewTask({ ...newTask, orderId: e.target.value })}
-                                />
+                                <FormControl fullWidth required>
+                                    <InputLabel>ID do Pedido</InputLabel>
+                                    <Select
+                                        value={newTask.orderId}
+                                        label="ID do Pedido"
+                                        onChange={(e) => {
+                                            const orderId = e.target.value as string;
+                                            setNewTask({ ...newTask, orderId });
+                                            handleOrderSelect(orderId);
+                                        }}
+                                    >
+                                        {Array.isArray(orders) && orders.map((order) => (
+                                            <MenuItem key={order.id} value={order.id}>
+                                                {order.id} - {order.customerName} ({order.status})
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, alignItems: 'center' }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            * Ao selecionar o pedido, tipo de CPU e componentes serão preenchidos automaticamente
+                                        </Typography>
+                                        {newTask.orderId && (
+                                            <Button 
+                                                size="small" 
+                                                onClick={() => {
+                                                    setNewTask({
+                                                        ...newTask,
+                                                        orderId: '',
+                                                        cpuType: '',
+                                                        components: []
+                                                    });
+                                                }}
+                                                sx={{ ml: 1 }}
+                                            >
+                                                Limpar
+                                            </Button>
+                                        )}
+                                    </Box>
+                                </FormControl>
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Tipo de CPU"
-                                    required
-                                    value={newTask.cpuType}
-                                    onChange={(e) => setNewTask({ ...newTask, cpuType: e.target.value })}
-                                />
+                                <FormControl fullWidth required>
+                                    <InputLabel>Tipo de CPU</InputLabel>
+                                    <Select
+                                        value={newTask.cpuType}
+                                        label="Tipo de CPU"
+                                        onChange={(e) => setNewTask({ ...newTask, cpuType: e.target.value })}
+                                        disabled={!!newTask.orderId}
+                                    >
+                                        {Array.isArray(cpuTypes) && cpuTypes.map((cpu) => (
+                                            <MenuItem key={cpu.id} value={cpu.id}>
+                                                {cpu.name} - R$ {cpu.price?.toLocaleString('pt-BR')}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
                             </Grid>
                             <Grid item xs={12}>
                                 <TextField
@@ -832,6 +921,7 @@ const TeamsManagement = () => {
                                     required
                                     value={newTask.components?.join(', ')}
                                     onChange={(e) => setNewTask({ ...newTask, components: e.target.value.split(',').map(c => c.trim()) })}
+                                    disabled={!!newTask.orderId}
                                 />
                             </Grid>
                             <Grid item xs={12}>
@@ -861,16 +951,7 @@ const TeamsManagement = () => {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Tempo Estimado (horas)"
-                                    type="number"
-                                    required
-                                    value={newTask.estimatedTime}
-                                    onChange={(e) => setNewTask({ ...newTask, estimatedTime: Number(e.target.value) })}
-                                />
-                            </Grid>
+
                             <Grid item xs={12}>
                                 <TextField
                                     fullWidth

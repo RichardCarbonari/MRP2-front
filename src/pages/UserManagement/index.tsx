@@ -123,6 +123,17 @@ const UserManagement: React.FC = () => {
       setFormError('');
       const token = localStorage.getItem('token');
       
+      // Verificar se o token existe
+      if (!token) {
+        setFormError('Token de autenticação não encontrado. Faça login novamente.');
+        return;
+      }
+
+      console.log('Enviando dados do usuário:', { 
+        editingUser: editingUser?.id, 
+        formData: { ...formData, password: formData.password ? '***' : '' } 
+      });
+      
       if (editingUser) {
         // Atualizar usuário existente
         const updateData: any = {
@@ -135,9 +146,11 @@ const UserManagement: React.FC = () => {
           updateData.password = formData.password;
         }
 
-        await axios.put(`/api/users/${editingUser.id}`, updateData, {
+        console.log('Atualizando usuário:', editingUser.id);
+        const response = await axios.put(`/api/users/${editingUser.id}`, updateData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        console.log('Usuário atualizado com sucesso:', response.data);
       } else {
         // Criar novo usuário
         if (!formData.password || formData.password.trim() === '') {
@@ -145,15 +158,27 @@ const UserManagement: React.FC = () => {
           return;
         }
 
-        await axios.post('/api/users', formData, {
+        console.log('Criando novo usuário');
+        const response = await axios.post('/api/users', formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        console.log('Usuário criado com sucesso:', response.data);
       }
 
       handleCloseDialog();
-      fetchUsers();
+      await fetchUsers(); // Aguardar a atualização da lista
     } catch (err: any) {
-      setFormError(err.response?.data?.message || 'Erro ao salvar usuário');
+      console.error('Erro ao salvar usuário:', err);
+      console.error('Resposta do servidor:', err.response?.data);
+      console.error('Status:', err.response?.status);
+      
+      if (err.response?.status === 401) {
+        setFormError('Sessão expirada. Faça login novamente.');
+      } else if (err.response?.status === 403) {
+        setFormError('Você não tem permissão para realizar esta ação.');
+      } else {
+        setFormError(err.response?.data?.message || 'Erro ao salvar usuário. Tente novamente.');
+      }
     }
   };
 
@@ -164,12 +189,30 @@ const UserManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setError('Token de autenticação não encontrado. Faça login novamente.');
+        return;
+      }
+
+      console.log('Deletando usuário:', userId);
       await axios.delete(`/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchUsers();
+      console.log('Usuário deletado com sucesso');
+      
+      await fetchUsers(); // Aguardar a atualização da lista
     } catch (err: any) {
-      setError('Erro ao excluir usuário');
+      console.error('Erro ao excluir usuário:', err);
+      console.error('Resposta do servidor:', err.response?.data);
+      
+      if (err.response?.status === 401) {
+        setError('Sessão expirada. Faça login novamente.');
+      } else if (err.response?.status === 403) {
+        setError('Você não tem permissão para realizar esta ação.');
+      } else {
+        setError(err.response?.data?.message || 'Erro ao excluir usuário. Tente novamente.');
+      }
     }
   };
 

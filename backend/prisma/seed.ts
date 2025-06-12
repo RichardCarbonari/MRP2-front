@@ -234,6 +234,102 @@ async function main() {
     console.log(`✅ Manutenção: ${request.equipment.split(' ')[0]} - ${request.status}`);
   }
 
+  // Tipos de CPU
+  const cpuTypes = [
+    {
+      name: 'Gaming Básico',
+      category: 'CPU',
+      subcategory: 'Gaming',
+      brand: 'MRP2',
+      price: 2500,
+      cost: 1800,
+      specifications: {
+        processor: 'Intel Core i5-13400F',
+        motherboard: 'ASUS TUF B660M-PLUS WiFi D4',
+        ram: 'Corsair Vengeance LPX 16GB DDR4',
+        storage: 'Kingston NV2 1TB NVMe',
+        gpu: 'NVIDIA GeForce RTX 3060 12GB',
+        powerSupply: 'Corsair CV550 550W 80 Plus Bronze',
+        case: 'Cooler Master Q300L'
+      }
+    },
+    {
+      name: 'Gaming Avançado',
+      category: 'CPU',
+      subcategory: 'Gaming',
+      brand: 'MRP2',
+      price: 4200,
+      cost: 3000,
+      specifications: {
+        processor: 'Intel Core i7-13700F',
+        motherboard: 'ASUS ROG STRIX B660-F GAMING WiFi',
+        ram: 'Corsair Vengeance LPX 32GB DDR4',
+        storage: 'Samsung 980 PRO 2TB NVMe',
+        gpu: 'NVIDIA GeForce RTX 4070 Ti',
+        powerSupply: 'Corsair RM750x 750W 80 Plus Gold',
+        case: 'NZXT H5 Flow'
+      }
+    },
+    {
+      name: 'Workstation',
+      category: 'CPU',
+      subcategory: 'Workstation',
+      brand: 'MRP2',
+      price: 3800,
+      cost: 2800,
+      specifications: {
+        processor: 'Intel Core i7-13700',
+        motherboard: 'ASUS ProArt B660-CREATOR D4',
+        ram: 'Corsair Vengeance LPX 64GB DDR4',
+        storage: 'Samsung 980 PRO 1TB NVMe',
+        gpu: 'NVIDIA RTX A4000',
+        powerSupply: 'Corsair RM850x 850W 80 Plus Gold',
+        case: 'Fractal Design Define 7'
+      }
+    },
+    {
+      name: 'Office/Corporativo',
+      category: 'CPU',
+      subcategory: 'Office',
+      brand: 'MRP2',
+      price: 1800,
+      cost: 1200,
+      specifications: {
+        processor: 'Intel Core i5-13400',
+        motherboard: 'ASUS PRIME B660M-A D4',
+        ram: 'Corsair Vengeance LPX 16GB DDR4',
+        storage: 'Kingston NV2 512GB NVMe',
+        powerSupply: 'Corsair CV450 450W 80 Plus Bronze',
+        case: 'Cooler Master MasterBox Q300L'
+      }
+    },
+    {
+      name: 'Entrada/Budget',
+      category: 'CPU',
+      subcategory: 'Budget',
+      brand: 'MRP2',
+      price: 1200,
+      cost: 800,
+      specifications: {
+        processor: 'Intel Core i3-13100',
+        motherboard: 'ASUS PRIME H610M-E D4',
+        ram: 'Kingston FURY Beast 8GB DDR4',
+        storage: 'Kingston NV2 256GB NVMe',
+        powerSupply: 'Corsair CV350 350W',
+        case: 'Cooler Master MasterBox Q300L'
+      }
+    }
+  ];
+
+  // Adicionar tipos de CPU
+  for (const cpu of cpuTypes) {
+    await prisma.product.create({
+      data: cpu
+    });
+  }
+
+  console.log('✅ Tipos de CPU adicionados com sucesso!');
+
   console.log('🖥️ Fábrica de CPUs configurada com sucesso!');
   console.log(`
 🏭 RESUMO DA FÁBRICA DE CPUs MRP2:

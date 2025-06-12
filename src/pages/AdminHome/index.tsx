@@ -61,6 +61,12 @@ const AdminHome = () => {
       description: 'Configure parâmetros do sistema',
       icon: <SettingsIcon sx={{ fontSize: 40, color: '#1DB954' }} />,
       path: '/settings'
+    },
+    {
+      title: 'Usuários',
+      description: 'Gerencie contas e acessos de usuários',
+      icon: <PersonIcon sx={{ fontSize: 40, color: '#1DB954' }} />,
+      path: '/user-management'
     }
   ];
 

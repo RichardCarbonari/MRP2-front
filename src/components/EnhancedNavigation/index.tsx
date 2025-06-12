@@ -22,6 +22,7 @@ import {
     Paper,
     ClickAwayListener,
     MenuList,
+    Badge,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -101,6 +102,7 @@ export default function EnhancedNavigation() {
             items: [
                 { text: 'Financeiro', icon: <AttachMoneyIcon />, path: '/financial' },
                 { text: 'Manutenção', icon: <BuildIcon />, path: '/maintenance' },
+                { text: 'Usuários', icon: <PersonIcon />, path: '/user-management' },
                 { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
             ]
         }
@@ -288,6 +290,25 @@ export default function EnhancedNavigation() {
                                 >
                                     Home
                                 </Button>
+
+                                {isAdmin() && (
+                                    <Button
+                                        onClick={() => handleNavigation('/user-management')}
+                                        sx={{
+                                            color: 'white',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            px: 2,
+                                            backgroundColor: location.pathname === '/user-management' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                            },
+                                        }}
+                                        startIcon={<PersonIcon />}
+                                    >
+                                        Usuários
+                                    </Button>
+                                )}
 
                                 {isAdmin() ? (
                                     Object.entries(adminMenuGroups).map(([key, group]) => (

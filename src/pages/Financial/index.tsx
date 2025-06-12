@@ -387,7 +387,7 @@ export default function Financial() {
                             <TableHead>
                                 <TableRow>
                                     <TableCell sx={{ fontWeight: 'bold' }}>Modelo CPU</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Vendas/Produção</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Vendas</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>Receita</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>Preço Médio</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>Margem de Lucro</TableCell>
@@ -420,14 +420,9 @@ export default function Financial() {
                                                 </Box>
                                             </TableCell>
                                             <TableCell align="center">
-                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
-                                                        {cpu.unitsSold}/{cpu.unitsProduced}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="textSecondary">
-                                                        {((cpu.unitsSold / cpu.unitsProduced) * 100).toFixed(1)}% vendidas
-                                                    </Typography>
-                                                </Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
+                                                    {cpu.unitsSold}
+                                                </Typography>
                                             </TableCell>
                                             <TableCell align="right">
                                                 <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>

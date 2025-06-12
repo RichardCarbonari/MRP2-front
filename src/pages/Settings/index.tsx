@@ -116,10 +116,20 @@ const Settings = () => {
         setLoading(true);
         
         try {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                setErrors({ currentPassword: 'Sessão expirada. Faça login novamente.' });
+                return;
+            }
+
+            console.log('🔒 Enviando requisição de alteração de senha...');
+            
             const response = await fetch('/api/auth/change-password', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     currentPassword: formData.currentPassword,
@@ -128,8 +138,10 @@ const Settings = () => {
             });
 
             const data = await response.json();
+            console.log('📥 Resposta do servidor:', data);
 
             if (!response.ok) {
+                console.error('❌ Erro na resposta:', response.status, data);
                 // Erro de validação do servidor
                 if (data.field) {
                     setErrors({ [data.field]: data.error });

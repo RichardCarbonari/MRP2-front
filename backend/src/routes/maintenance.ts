@@ -46,6 +46,17 @@ const validateStatus = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+// Middleware para verificar permissões de manutenção
+const checkMaintenancePermission = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  if (user.role !== 'admin' && user.role !== 'maintenance') {
+    return res.status(403).json({
+      message: 'Acesso negado. Apenas administradores e técnicos de manutenção podem acessar esta rota.'
+    });
+  }
+  next();
+};
+
 // 📋 ROTAS PARA FUNCIONÁRIOS (CRIAR SOLICITAÇÕES)
 
 // Criar uma nova solicitação de manutenção
@@ -72,106 +83,6 @@ router.post('/requests', authMiddleware, validateMaintenanceRequest, async (req:
   }
 });
 
-// ===============================================
-// MOCK DATA ENDPOINTS (TEMPORARY - FOR DEVELOPMENT)
-// ===============================================
-
-// GET /api/maintenance/mock-requests - Dados mockados realistas
-router.get('/mock-requests', (req: Request, res: Response) => {
-    try {
-        console.log('✅ GET /api/maintenance/mock-requests - Buscando dados mockados');
-        
-        const mockRequests = [
-            {
-                id: 'MNT001',
-                equipment: 'Torno CNC Mazak QT-15',
-                description: 'Ruído anormal no eixo principal durante operação. Necessita verificação dos rolamentos e lubrificação.',
-                priority: 'Alta',
-                department: 'Usinagem',
-                status: 'Em Andamento',
-                requestedBy: 'Carlos Operador',
-                requestedByEmail: 'carlos.operador@mrp2cpu.com.br',
-                requestedAt: '2024-12-16T08:30:00Z',
-                assignedTo: 'João Técnico',
-                estimatedTime: '4 horas'
-            },
-            {
-                id: 'MNT002',
-                equipment: 'Prensa Hidráulica Schuler 250T',
-                description: 'Vazamento de óleo no sistema hidráulico. Pressão instável durante estampagem.',
-                priority: 'Alta',
-                department: 'Estamparia',
-                status: 'Pendente',
-                requestedBy: 'Maria Supervisora',
-                requestedByEmail: 'maria.supervisora@mrp2cpu.com.br',
-                requestedAt: '2024-12-16T09:15:00Z',
-                estimatedTime: '6 horas'
-            },
-            {
-                id: 'MNT003',
-                equipment: 'Esteira Transportadora Linha 3',
-                description: 'Motor da esteira apresenta sobrecarga. Verificar tensão da correia e alinhamento.',
-                priority: 'Média',
-                department: 'Montagem',
-                status: 'Agendada',
-                requestedBy: 'Pedro Montador',
-                requestedByEmail: 'pedro.montador@mrp2cpu.com.br',
-                requestedAt: '2024-12-15T14:20:00Z',
-                scheduledFor: '2024-12-17T07:00:00Z',
-                assignedTo: 'Ricardo Elétrica',
-                estimatedTime: '3 horas'
-            },
-            {
-                id: 'MNT004',
-                equipment: 'Compressor Atlas Copco GA22',
-                description: 'Temperatura elevada e consumo excessivo de energia. Limpeza dos filtros necessária.',
-                priority: 'Média',
-                department: 'Produção',
-                status: 'Concluída',
-                requestedBy: 'Ana Técnica',
-                requestedByEmail: 'ana.tecnica@mrp2cpu.com.br',
-                requestedAt: '2024-12-14T10:45:00Z',
-                completedAt: '2024-12-15T16:30:00Z',
-                assignedTo: 'Bruno Mecânico',
-                solution: 'Filtros de ar substituídos e limpeza geral do sistema. Temperatura normalizada.',
-                timeSpent: '2.5 horas'
-            },
-            {
-                id: 'MNT005',
-                equipment: 'Soldadora Robótica KUKA KR6',
-                description: 'Falha no programa de soldagem. Robô para na posição 3 da sequência.',
-                priority: 'Alta',
-                department: 'Montagem',
-                status: 'Em Andamento',
-                requestedBy: 'Lucas Programador',
-                requestedByEmail: 'lucas.programador@mrp2cpu.com.br',
-                requestedAt: '2024-12-16T11:00:00Z',
-                assignedTo: 'Marcos Automação',
-                estimatedTime: '5 horas'
-            },
-            {
-                id: 'MNT006',
-                equipment: 'Fresadora CNC Haas VF-2',
-                description: 'Alarme de temperatura no spindle. Sistema de refrigeração com vazão reduzida.',
-                priority: 'Baixa',
-                department: 'Usinagem',
-                status: 'Agendada',
-                requestedBy: 'Roberto Operador',
-                requestedByEmail: 'roberto.operador@mrp2cpu.com.br',
-                requestedAt: '2024-12-15T16:45:00Z',
-                scheduledFor: '2024-12-18T06:00:00Z',
-                assignedTo: 'João Técnico',
-                estimatedTime: '4 horas'
-            }
-        ];
-        
-        res.json(mockRequests);
-    } catch (error) {
-        console.error('❌ Erro ao buscar dados mockados:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-});
-
 // Listar solicitações do usuário logado
 router.get('/requests', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -195,7 +106,7 @@ router.get('/requests', authMiddleware, async (req: Request, res: Response, next
 // 🔧 ROTAS PARA EQUIPE DE MANUTENÇÃO (GERENCIAR TODOS OS PEDIDOS)
 
 // Listar TODOS os pedidos de manutenção (para equipe de manutenção)
-router.get('/all-requests', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/all-requests', authMiddleware, checkMaintenancePermission, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status, priority } = req.query;
     
@@ -235,10 +146,11 @@ router.get('/all-requests', authMiddleware, async (req: Request, res: Response, 
 });
 
 // Atribuir um pedido para a equipe de manutenção
-router.put('/requests/:id/assign', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.put('/requests/:id/assign', authMiddleware, checkMaintenancePermission, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { assignedTo, notes } = req.body;
+    const { notes } = req.body;
+    const userId = (req as any).user.userId;
 
     const existingRequest = await prisma.maintenanceRequest.findUnique({
       where: { id }
@@ -254,8 +166,8 @@ router.put('/requests/:id/assign', authMiddleware, async (req: Request, res: Res
       where: { id },
       data: { 
         status: 'Em Andamento',
-        // assignedTo, // Será adicionado quando expandir o schema
-        // notes // Será adicionado quando expandir o schema
+        assignedTo: userId,
+        notes: notes || null
       }
     });
 
@@ -266,10 +178,12 @@ router.put('/requests/:id/assign', authMiddleware, async (req: Request, res: Res
 });
 
 // Atualizar status e adicionar observações
-router.put('/requests/:id/update', authMiddleware, validateStatus, async (req: Request, res: Response, next: NextFunction) => {
+router.put('/requests/:id/update', authMiddleware, checkMaintenancePermission, validateStatus, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { status, solution, notes } = req.body;
+    const userId = (req as any).user.userId;
+    const userRole = (req as any).user.role;
 
     const existingRequest = await prisma.maintenanceRequest.findUnique({
       where: { id }
@@ -281,14 +195,30 @@ router.put('/requests/:id/update', authMiddleware, validateStatus, async (req: R
       });
     }
 
-    // Se está sendo marcado como concluído, incluir data de conclusão
-    const updateData: any = { status };
+    // Se não houver assignedTo, permitir que o técnico se atribua ao atualizar
+    if (!existingRequest.assignedTo) {
+      await prisma.maintenanceRequest.update({
+        where: { id },
+        data: { assignedTo: userId, status: 'Em Andamento' }
+      });
+    }
+
+    // Verificar se o usuário é o técnico responsável ou admin
+    const isResponsible = existingRequest.assignedTo === userId || (!existingRequest.assignedTo && userRole === 'maintenance');
+    if (!isResponsible && userRole !== 'admin') {
+      return res.status(403).json({
+        message: 'Apenas o técnico responsável ou um administrador podem atualizar esta solicitação'
+      });
+    }
+
+    const updateData: any = { 
+      status,
+      notes: notes || null,
+      solution: solution || null
+    };
     
     if (status === 'Concluída') {
-      // Adicionar solução na descrição por enquanto (até expandir schema)
-      updateData.description = existingRequest.description + 
-        (solution ? `\n\n✅ SOLUÇÃO: ${solution}` : '') +
-        (notes ? `\n📝 OBSERVAÇÕES: ${notes}` : '');
+      updateData.completedAt = new Date();
     }
 
     const updatedRequest = await prisma.maintenanceRequest.update({
@@ -365,6 +295,47 @@ router.put('/requests/:id', validateStatus, async (req: Request, res: Response, 
     });
 
     res.json(updatedRequest);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Excluir solicitação concluída
+router.delete('/requests/:id', authMiddleware, checkMaintenancePermission, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userRole = (req as any).user.role;
+
+    const existingRequest = await prisma.maintenanceRequest.findUnique({
+      where: { id }
+    });
+
+    if (!existingRequest) {
+      return res.status(404).json({
+        message: 'Solicitação de manutenção não encontrada'
+      });
+    }
+
+    // Verificar se a solicitação está concluída
+    if (existingRequest.status !== 'Concluída') {
+      return res.status(400).json({
+        message: 'Apenas solicitações concluídas podem ser excluídas'
+      });
+    }
+
+    // Verificar se o usuário é o técnico responsável ou admin
+    const isResponsible = existingRequest.assignedTo === (req as any).user.userId || userRole === 'admin';
+    if (!isResponsible) {
+      return res.status(403).json({
+        message: 'Apenas o técnico responsável ou um administrador podem excluir esta solicitação'
+      });
+    }
+
+    await prisma.maintenanceRequest.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'Solicitação excluída com sucesso' });
   } catch (error) {
     next(error);
   }
